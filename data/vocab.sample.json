@@ -1,0 +1,230 @@
+{
+  "words": [
+    {
+      "id": "sample-resilient",
+      "word": "resilient",
+      "ipa": "/rɪˈzɪl.i.ənt/",
+      "partOfSpeech": "adjective",
+      "register": "Formal / Versatile",
+      "meaningVi": "Kiên cường, có khả năng phục hồi nhanh sau khó khăn hoặc tổn thương",
+      "meaningEn": "Able to withstand or recover quickly from difficult conditions.",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "resilience",
+            "meaningVi": "sự kiên cường, khả năng phục hồi",
+            "example": "Team resilience is essential during major product launches."
+          }
+        ],
+        "verbs": [],
+        "adjectives": [
+          {
+            "word": "resilient",
+            "meaningVi": "kiên cường, bền bỉ",
+            "example": "She proved remarkably resilient after losing her job."
+          }
+        ],
+        "adverbs": [
+          {
+            "word": "resiliently",
+            "meaningVi": "một cách kiên cường",
+            "example": "The coastal town rebuilt resiliently after the storm."
+          }
+        ],
+        "synonyms": ["adaptable", "tough", "buoyant", "hardy"],
+        "antonyms": ["fragile", "vulnerable", "brittle"]
+      },
+      "collocations": [
+        {
+          "phrase": "economically resilient",
+          "meaningVi": "vững vàng về mặt kinh tế",
+          "example": "Diversified cities tend to be more economically resilient."
+        },
+        {
+          "phrase": "resilient mindset",
+          "meaningVi": "tư duy kiên cường",
+          "example": "A resilient mindset helps founders navigate setbacks."
+        },
+        {
+          "phrase": "remarkably resilient",
+          "meaningVi": "kiên cường một cách đáng nể",
+          "example": "Local ecosystems are remarkably resilient if protected."
+        },
+        {
+          "phrase": "build resilience",
+          "meaningVi": "xây dựng sức chống chịu",
+          "example": "Daily habits help you build resilience against stress."
+        }
+      ],
+      "examples": [
+        "Children are often more resilient than adults give them credit for.",
+        "We need a resilient infrastructure capable of handling sudden traffic spikes."
+      ],
+      "writingPrompt": "Viết một câu mô tả cách bản thân hoặc một hệ thống bạn biết phục hồi sau một sự cố khó khăn.",
+      "srs": {
+        "interval": 0,
+        "repetition": 0,
+        "efactor": 2.5,
+        "nextReviewDate": "2026-01-01T00:00:00.000Z",
+        "masteryScore": 25
+      },
+      "history": [],
+      "createdAt": "2026-11-14T00:00:00.000Z"
+    },
+    {
+      "id": "sample-ubiquitous",
+      "word": "ubiquitous",
+      "ipa": "/juːˈbɪk.wɪ.təs/",
+      "partOfSpeech": "adjective",
+      "register": "Academic / Formal",
+      "meaningVi": "Có mặt ở khắp mọi nơi, phổ biến rộng rãi",
+      "meaningEn": "Present, appearing, or found everywhere.",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "ubiquity",
+            "meaningVi": "tính phổ biến khắp nơi",
+            "example": "The ubiquity of smartphones has reshaped daily communication."
+          }
+        ],
+        "verbs": [],
+        "adjectives": [
+          {
+            "word": "ubiquitous",
+            "meaningVi": "xuất hiện khắp nơi",
+            "example": "Coffee shops have become ubiquitous in urban neighborhoods."
+          }
+        ],
+        "adverbs": [
+          {
+            "word": "ubiquitously",
+            "meaningVi": "một cách phổ biến khắp nơi",
+            "example": "QR codes are now used ubiquitously for payments."
+          }
+        ],
+        "synonyms": ["omnipresent", "pervasive", "universal", "widespread"],
+        "antonyms": ["rare", "scarce", "uncommon"]
+      },
+      "collocations": [
+        {
+          "phrase": "become ubiquitous",
+          "meaningVi": "trở nên phổ biến khắp nơi",
+          "example": "Remote collaboration tools have become ubiquitous."
+        },
+        {
+          "phrase": "ubiquitous presence",
+          "meaningVi": "sự hiện diện khắp nơi",
+          "example": "The brand maintains a ubiquitous presence on social media."
+        },
+        {
+          "phrase": "almost ubiquitous",
+          "meaningVi": "gần như ở đâu cũng có",
+          "example": "High-speed internet is almost ubiquitous in major cities."
+        },
+        {
+          "phrase": "ubiquitous computing",
+          "meaningVi": "điện toán phổ cập mọi nơi",
+          "example": "Wearable devices brought ubiquitous computing into daily life."
+        }
+      ],
+      "examples": [
+        "Plastic packaging has become ubiquitous in modern supermarkets.",
+        "AI assistants are now ubiquitous across developer tools."
+      ],
+      "writingPrompt": "Viết một câu nói về một công nghệ hoặc thói quen hiện nay đã trở nên có mặt ở khắp mọi nơi.",
+      "srs": {
+        "interval": 0,
+        "repetition": 0,
+        "efactor": 2.5,
+        "nextReviewDate": "2026-01-01T00:00:00.000Z",
+        "masteryScore": 20
+      },
+      "history": [],
+      "createdAt": "2026-11-14T00:00:00.000Z"
+    },
+    {
+      "id": "sample-mitigate",
+      "word": "mitigate",
+      "ipa": "/ˈmɪt.ɪ.ɡeɪt/",
+      "partOfSpeech": "verb",
+      "register": "Formal / Business",
+      "meaningVi": "Làm giảm nhẹ, hạn chế mức độ nghiêm trọng (của rủi ro, thiệt hại)",
+      "meaningEn": "To make something less harmful, unpleasant, or bad.",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "mitigation",
+            "meaningVi": "sự giảm nhẹ, biện pháp giảm thiểu",
+            "example": "Risk mitigation should happen before deployment."
+          }
+        ],
+        "verbs": [
+          {
+            "word": "mitigate",
+            "meaningVi": "làm giảm nhẹ, giảm thiểu",
+            "example": "Automated tests help mitigate regression bugs."
+          }
+        ],
+        "adjectives": [
+          {
+            "word": "mitigating",
+            "meaningVi": "có tính giảm nhẹ (tình tiết, yếu tố)",
+            "example": "The judge considered several mitigating circumstances."
+          },
+          {
+            "word": "mitigated",
+            "meaningVi": "được giảm nhẹ",
+            "example": "With mitigated risk, the team approved the release."
+          }
+        ],
+        "adverbs": [],
+        "synonyms": ["alleviate", "reduce", "lessen", "curb"],
+        "antonyms": ["aggravate", "exacerbate", "intensify"]
+      },
+      "collocations": [
+        {
+          "phrase": "mitigate the risk of",
+          "meaningVi": "giảm thiểu rủi ro của việc gì",
+          "example": "Backups mitigate the risk of permanent data loss."
+        },
+        {
+          "phrase": "mitigate the impact",
+          "meaningVi": "giảm nhẹ tác động",
+          "example": "Emergency funds mitigate the impact of sudden expenses."
+        },
+        {
+          "phrase": "mitigating factor",
+          "meaningVi": "yếu tố giảm nhẹ",
+          "example": "Bad weather was cited as a mitigating factor for the delay."
+        },
+        {
+          "phrase": "risk mitigation strategy",
+          "meaningVi": "chiến lược giảm thiểu rủi ro",
+          "example": "Every project needs a clear risk mitigation strategy."
+        }
+      ],
+      "examples": [
+        "Planting coastal mangroves helps mitigate flood damage.",
+        "Clear documentation can mitigate misunderstandings between teams."
+      ],
+      "writingPrompt": "Viết một câu dùng 'mitigate' hoặc 'mitigation' về cách giảm thiểu rủi ro trong công việc hoặc cuộc sống.",
+      "srs": {
+        "interval": 0,
+        "repetition": 0,
+        "efactor": 2.5,
+        "nextReviewDate": "2026-01-01T00:00:00.000Z",
+        "masteryScore": 30
+      },
+      "history": [],
+      "createdAt": "2026-11-14T00:00:00.000Z"
+    }
+  ],
+  "stats": {
+    "currentStreak": 0,
+    "longestStreak": 0,
+    "lastPracticeDate": null,
+    "totalSentencesWritten": 0,
+    "totalQuizzesCompleted": 0,
+    "dailyLog": {}
+  }
+}

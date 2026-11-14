@@ -1,0 +1,449 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>VocabDaily — Luyện Từ Vựng, Viết Câu & Họ Từ Mỗi Ngày</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/styles.css" />
+</head>
+<body data-theme="dark">
+  <div class="app-shell">
+    <!-- Top Header & Habit Bar -->
+    <header class="habit-header">
+      <div class="brand">
+        <div class="brand-logo" aria-hidden="true">VD</div>
+        <div>
+          <h1>VocabDaily</h1>
+          <p class="subtitle">Xây dựng thói quen dùng từ vựng thực chiến mỗi ngày</p>
+        </div>
+      </div>
+
+      <div class="habit-metrics">
+        <div class="metric-pill streak-pill" title="Chuỗi ngày luyện tập liên tiếp">
+          <span class="metric-label">Streak</span>
+          <strong id="streakValue">0 ngày</strong>
+          <span class="metric-sub" id="longestStreakValue">Kỷ lục: 0</span>
+        </div>
+
+        <div class="metric-pill">
+          <span class="metric-label">Kho từ / Cần ôn</span>
+          <strong><span id="totalWordsValue">0</span> / <span id="dueWordsValue" class="accent-warn">0</span></strong>
+          <span class="metric-sub" id="masteredWordsValue">Thành thạo: 0</span>
+        </div>
+
+        <div class="daily-goals-box">
+          <span class="metric-label">Mục tiêu hôm nay</span>
+          <div class="goal-chips">
+            <span class="goal-chip" id="goalWord">+1 từ</span>
+            <span class="goal-chip" id="goalSentence">2 câu viết</span>
+            <span class="goal-chip" id="goalQuiz">3 câu quiz</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button id="sendDiscordBtn" class="btn btn-discord" title="Gửi thẻ bài tập hôm nay sang Discord qua Webhook">
+          Gửi Discord hôm nay
+        </button>
+        <button id="themeToggleBtn" class="btn btn-ghost" title="Đổi giao diện Sáng / Tối">Giao diện</button>
+      </div>
+    </header>
+
+    <!-- Main Navigation Tabs -->
+    <nav class="tab-nav" aria-label="Chức năng chính">
+      <button class="tab-btn active" data-tab="explorer">1. Thêm từ &amp; Sơ đồ Họ từ</button>
+      <button class="tab-btn" data-tab="writing">2. Phòng Luyện Viết Câu</button>
+      <button class="tab-btn" data-tab="quiz">3. Đấu Trường Ôn Tập</button>
+      <button class="tab-btn" data-tab="settings">4. Kết nối Discord &amp; Sao lưu</button>
+    </nav>
+
+    <div id="toastBanner" class="toast hidden" role="status"></div>
+
+    <!-- TAB 1: Word Explorer & Family Map -->
+    <main class="main-content">
+      <section id="tab-explorer" class="tab-panel active">
+        <div class="grid-explorer">
+          <!-- Left: Add word + Family visual map -->
+          <div class="panel-column">
+            <div class="card">
+              <div class="card-header">
+                <h2>Thêm từ vựng mới bắt gặp hôm nay</h2>
+                <span class="badge badge-info">Gemini AI</span>
+              </div>
+              <form id="addWordForm" class="add-word-form">
+                <div class="input-row">
+                  <div class="field-group flex-1">
+                    <label for="newWordInput">Từ hoặc cụm từ tiếng Anh</label>
+                    <input
+                      id="newWordInput"
+                      type="text"
+                      placeholder="Ví dụ: resilient, mitigate, take into account..."
+                      required
+                    />
+                  </div>
+                  <div class="field-group flex-1">
+                    <label for="newWordContextInput">Câu ngữ cảnh bắt gặp (tùy chọn)</label>
+                    <input
+                      id="newWordContextInput"
+                      type="text"
+                      placeholder="Ví dụ: Teams must remain resilient under pressure."
+                    />
+                  </div>
+                </div>
+                <div class="form-actions">
+                  <button type="submit" id="analyzeWordBtn" class="btn btn-primary">
+                    Phân tích &amp; Lưu từ
+                  </button>
+                  <span class="hint-text">Hoặc gõ <code>+ từ_vựng</code> trực tiếp trong Discord Bot</span>
+                </div>
+              </form>
+            </div>
+
+            <!-- Word Family Visual Map -->
+            <div id="wordDetailCard" class="card word-detail-card">
+              <div class="empty-state" id="wordDetailEmpty">
+                Chọn một từ trong kho bên phải hoặc nhập từ mới để xem sơ đồ Họ từ (Noun / Verb / Adj / Adv) và Collocations.
+              </div>
+              <div id="wordDetailContent" class="hidden">
+                <div class="word-hero">
+                  <div>
+                    <div class="word-title-row">
+                      <h2 id="detailWord" class="hero-word">—</h2>
+                      <span id="detailIpa" class="ipa-tag"></span>
+                      <span id="detailPos" class="pos-tag"></span>
+                      <span id="detailRegister" class="badge"></span>
+                    </div>
+                    <p id="detailMeaningVi" class="meaning-vi"></p>
+                    <p id="detailMeaningEn" class="meaning-en"></p>
+                  </div>
+                  <div class="hero-actions">
+                    <button id="practiceSelectedWordBtn" class="btn btn-success">Luyện viết câu ngay</button>
+                    <button id="quizSelectedWordBtn" class="btn btn-secondary">Quiz từ này</button>
+                  </div>
+                </div>
+
+                <!-- Visual Tree of Word Family -->
+                <div class="family-section">
+                  <h3>Sơ đồ Họ từ (Word Family Map)</h3>
+                  <div class="family-tree-grid">
+                    <div class="family-branch branch-noun">
+                      <div class="branch-title">Danh từ (Noun)</div>
+                      <div id="familyNouns" class="branch-items"></div>
+                    </div>
+                    <div class="family-branch branch-verb">
+                      <div class="branch-title">Động từ (Verb)</div>
+                      <div id="familyVerbs" class="branch-items"></div>
+                    </div>
+                    <div class="family-branch branch-adj">
+                      <div class="branch-title">Tính từ (Adjective)</div>
+                      <div id="familyAdjs" class="branch-items"></div>
+                    </div>
+                    <div class="family-branch branch-adv">
+                      <div class="branch-title">Trạng từ (Adverb)</div>
+                      <div id="familyAdvs" class="branch-items"></div>
+                    </div>
+                  </div>
+
+                  <div class="syn-ant-row">
+                    <div class="syn-box">
+                      <span class="sub-label">Đồng nghĩa (Synonyms):</span>
+                      <div id="familySynonyms" class="chip-list"></div>
+                    </div>
+                    <div class="ant-box">
+                      <span class="sub-label">Trái nghĩa (Antonyms):</span>
+                      <div id="familyAntonyms" class="chip-list"></div>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Collocations & Examples -->
+                <div class="collocation-example-grid">
+                  <div class="sub-card">
+                    <h3>Cụm từ đi kèm (Collocations)</h3>
+                    <ul id="detailCollocations" class="clean-list"></ul>
+                  </div>
+                  <div class="sub-card">
+                    <h3>Ví dụ thực tế &amp; Gợi ý đặt câu</h3>
+                    <ul id="detailExamples" class="clean-list"></ul>
+                    <div class="prompt-callout">
+                      <strong>Gợi ý thực hành:</strong>
+                      <span id="detailPrompt"></span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Right: Word Bank & Spaced Repetition List -->
+          <aside class="card word-bank-card">
+            <div class="card-header">
+              <h2>Kho từ của bạn</h2>
+              <select id="wordFilterSelect" aria-label="Lọc từ vựng">
+                <option value="all">Tất cả từ</option>
+                <option value="due">Cần ôn hôm nay</option>
+                <option value="mastered">Đã thành thạo (&ge;80%)</option>
+              </select>
+            </div>
+            <input
+              id="wordSearchInput"
+              type="search"
+              class="search-input"
+              placeholder="Tìm từ, nghĩa hoặc dạng từ..."
+            />
+            <div id="wordBankList" class="word-bank-list"></div>
+          </aside>
+        </div>
+      </section>
+
+      <!-- TAB 2: Sentence Writing & Grammar Lab -->
+      <section id="tab-writing" class="tab-panel">
+        <div class="writing-layout">
+          <div class="card writing-input-card">
+            <div class="card-header">
+              <h2>Phòng Luyện Viết Câu &amp; Sửa Lỗi</h2>
+              <button id="pickDueWordBtn" class="btn btn-ghost">Chọn từ đến hạn ôn</button>
+            </div>
+
+            <div class="field-group">
+              <label for="writingTargetSelect">Chọn từ mục tiêu</label>
+              <select id="writingTargetSelect"></select>
+            </div>
+
+            <div id="writingContextBox" class="writing-context-box">
+              <div class="context-meaning">
+                <strong id="writingWordTitle">—</strong>
+                <span id="writingWordMeaning"></span>
+              </div>
+              <p id="writingPromptText" class="writing-prompt-text"></p>
+              <div class="quick-family-chips">
+                <span class="sub-label">Thử biến đổi dạng từ hoặc dùng Collocation:</span>
+                <div id="writingFamilyChips" class="chip-list"></div>
+              </div>
+            </div>
+
+            <form id="evaluateSentenceForm">
+              <div class="field-group">
+                <label for="userSentenceInput">Viết câu tiếng Anh của bạn</label>
+                <textarea
+                  id="userSentenceInput"
+                  rows="4"
+                  placeholder="Viết ít nhất 1 câu hoàn chỉnh sử dụng từ mục tiêu hoặc họ từ của nó..."
+                  required
+                ></textarea>
+              </div>
+              <div class="form-actions">
+                <button type="submit" id="evaluateBtn" class="btn btn-primary">
+                  Chấm điểm &amp; Sửa lỗi ngữ pháp
+                </button>
+                <button type="button" id="clearSentenceBtn" class="btn btn-ghost">Xóa nháp</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card writing-result-card">
+            <div class="card-header">
+              <h2>Kết quả phân tích chi tiết</h2>
+              <span id="scoreBadge" class="badge hidden"></span>
+            </div>
+
+            <div id="writingFeedbackEmpty" class="empty-state">
+              Nhập câu tiếng Anh ở khung bên trái để AI chấm điểm cấu trúc, bắt lỗi ngữ pháp, kiểm tra dạng từ và gợi ý 3 cách diễn đạt nâng cấp.
+            </div>
+
+            <div id="writingFeedbackContent" class="hidden">
+              <div class="score-summary">
+                <div class="score-ring" id="scoreRing">
+                  <span id="scoreNumber">0</span>
+                  <small>/100</small>
+                </div>
+                <div class="score-meta">
+                  <div id="usageStatusBadge" class="usage-status"></div>
+                  <p id="encouragementText" class="encouragement-text"></p>
+                </div>
+              </div>
+
+              <div class="diff-block">
+                <div class="diff-row diff-original">
+                  <span class="diff-label">Câu bạn viết</span>
+                  <p id="feedbackOriginalSentence"></p>
+                </div>
+                <div class="diff-row diff-corrected">
+                  <span class="diff-label">Câu đã chuẩn hóa</span>
+                  <p id="feedbackCorrectedSentence"></p>
+                </div>
+              </div>
+
+              <div class="feedback-block">
+                <h3>Lỗi ngữ pháp &amp; cấu trúc phát hiện</h3>
+                <div id="grammarErrorsList" class="errors-list"></div>
+              </div>
+
+              <div class="feedback-block">
+                <h3>Nhận xét Dạng từ (Word Form) &amp; Collocation</h3>
+                <p id="wordFormFeedbackText" class="feedback-prose"></p>
+              </div>
+
+              <div class="feedback-block">
+                <h3>3 phiên bản diễn đạt tự nhiên hơn</h3>
+                <div id="upgradedVersionsList" class="upgrades-grid"></div>
+              </div>
+            </div>
+
+            <div class="history-section">
+              <h3>Lịch sử câu đã viết cho từ này</h3>
+              <div id="wordHistoryList" class="history-list"></div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 3: Multi-Mode Practice Arena -->
+      <section id="tab-quiz" class="tab-panel">
+        <div class="card quiz-controls-card">
+          <div class="card-header">
+            <h2>Đấu Trường Ôn Tập Đa Dạng (Spaced Repetition)</h2>
+          </div>
+          <div class="quiz-toolbar">
+            <div class="mode-buttons" id="quizModeButtons">
+              <button class="mode-btn active" data-mode="mixed">Trộn đa dạng</button>
+              <button class="mode-btn" data-mode="word_form">Biến đổi Họ từ</button>
+              <button class="mode-btn" data-mode="error_spot">Tìm lỗi sai</button>
+              <button class="mode-btn" data-mode="multiple_choice">Ngữ cảnh &amp; Collocation</button>
+              <button class="mode-btn" data-mode="sentence_transform">Viết lại câu</button>
+            </div>
+            <button id="startQuizBtn" class="btn btn-primary">Tạo bộ 5 bài tập mới</button>
+          </div>
+        </div>
+
+        <div id="quizArenaCard" class="card quiz-arena-card">
+          <div id="quizEmptyState" class="empty-state">
+            Chọn dạng bài tập phía trên rồi bấm <strong>Tạo bộ 5 bài tập mới</strong> để ôn lại các từ đến hạn hôm nay.
+          </div>
+
+          <div id="quizActiveView" class="hidden">
+            <div class="quiz-progress-row">
+              <span id="quizCounter" class="badge badge-info">Câu 1 / 5</span>
+              <span id="quizTypeBadge" class="badge"></span>
+              <span id="quizScoreLive" class="quiz-score-live">Đúng: 0</span>
+            </div>
+
+            <div class="quiz-question-box">
+              <div class="quiz-target-pill">Từ mục tiêu: <strong id="quizTargetWord"></strong></div>
+              <h3 id="quizQuestionText" class="quiz-question-text"></h3>
+              <p id="quizHintText" class="quiz-hint-text"></p>
+            </div>
+
+            <div id="quizOptionsGrid" class="quiz-options-grid"></div>
+
+            <div id="quizTransformBox" class="quiz-transform-box hidden">
+              <textarea
+                id="quizTransformInput"
+                rows="3"
+                placeholder="Nhập câu tiếng Anh của bạn..."
+              ></textarea>
+              <div class="form-actions">
+                <button id="quizCheckTransformBtn" class="btn btn-primary">Chấm với Gemini AI</button>
+                <button id="quizRevealTransformBtn" class="btn btn-ghost">Xem đáp án mẫu</button>
+              </div>
+            </div>
+
+            <div id="quizFeedbackBox" class="quiz-feedback-box hidden"></div>
+
+            <div class="quiz-footer-actions">
+              <button id="quizNextBtn" class="btn btn-success hidden">Câu tiếp theo</button>
+            </div>
+          </div>
+
+          <div id="quizSummaryView" class="hidden quiz-summary">
+            <h2>Hoàn thành phiên ôn tập</h2>
+            <p id="quizSummaryText"></p>
+            <button id="quizRestartBtn" class="btn btn-primary">Làm bộ bài tập mới</button>
+          </div>
+        </div>
+      </section>
+
+      <!-- TAB 4: Settings, Discord Integration & JSON Backup -->
+      <section id="tab-settings" class="tab-panel">
+        <div class="settings-grid">
+          <div class="card">
+            <h2>Cấu hình API Key &amp; Discord Webhook</h2>
+            <p class="hint-text">
+              Lưu trực tiếp trên trình duyệt (LocalStorage). Nếu bạn chạy server local kèm file <code>.env</code> hoặc cấu hình Environment Variables trên Vercel, bạn có thể bỏ trống ô API Key.
+            </p>
+            <form id="settingsForm" class="settings-form">
+              <div class="field-group">
+                <label for="geminiKeyInput">Google Gemini API Key</label>
+                <input
+                  id="geminiKeyInput"
+                  type="password"
+                  placeholder="AIzaSy... (Lấy miễn phí tại aistudio.google.com)"
+                />
+              </div>
+              <div class="field-group">
+                <label for="discordWebhookInput">Discord Webhook URL (nhắc học 1-chạm)</label>
+                <input
+                  id="discordWebhookInput"
+                  type="url"
+                  placeholder="https://discord.com/api/webhooks/..."
+                />
+              </div>
+              <div class="form-actions">
+                <button type="submit" class="btn btn-primary">Lưu cài đặt</button>
+                <button type="button" id="testWebhookBtn" class="btn btn-discord">Gửi thử tới Discord</button>
+              </div>
+            </form>
+          </div>
+
+          <div class="card">
+            <h2>Sao lưu &amp; Đồng bộ dữ liệu (JSON)</h2>
+            <p class="hint-text">
+              Toàn bộ từ vựng, họ từ, lịch sử viết câu và tiến độ Spaced Repetition được lưu trên trình duyệt của bạn. Hãy xuất file JSON định kỳ hoặc đồng bộ với Discord Bot local.
+            </p>
+            <div class="backup-actions">
+              <button id="exportJsonBtn" class="btn btn-primary">Xuất file Backup (.json)</button>
+              <label class="btn btn-secondary file-upload-label">
+                Nhập file Backup (.json)
+                <input id="importJsonInput" type="file" accept=".json,application/json" hidden />
+              </label>
+              <button id="syncFromServerBtn" class="btn btn-ghost">Lấy dữ liệu từ Discord Bot local</button>
+              <button id="pushToServerBtn" class="btn btn-ghost">Đẩy dữ liệu sang Discord Bot local</button>
+              <button id="resetSampleBtn" class="btn btn-danger-outline">Nạp lại 3 từ mẫu</button>
+            </div>
+            <div id="serverStatusBox" class="server-status-box">Đang kiểm tra trạng thái server...</div>
+          </div>
+
+          <div class="card full-span">
+            <h2>Cách vận hành Discord Bot &amp; Deploy Vercel đơn giản nhất</h2>
+            <div class="guide-grid">
+              <div class="guide-block">
+                <h3>Cách 1: Discord Bot thuần túy (Tương tác 100% trong khung chat)</h3>
+                <ol>
+                  <li>Tạo Bot tại <strong>Discord Developer Portal</strong> &rarr; bật <strong>Message Content Intent</strong> trong mục Bot.</li>
+                  <li>Copy file <code>.env.example</code> thành <code>.env</code>, điền <code>GEMINI_API_KEY</code>, <code>DISCORD_BOT_TOKEN</code>, <code>DISCORD_CLIENT_ID</code> và <code>DISCORD_CHANNEL_ID</code>.</li>
+                  <li>Chạy lệnh <code>npm start</code> (chạy cả Web UI + Bot) hoặc <code>npm run bot</code>.</li>
+                  <li>Trong Discord: gõ <code>+ resilient</code> để thêm từ, gõ thẳng câu tiếng Anh để sửa lỗi, hoặc dùng <code>/write</code>, <code>/quiz</code>, <code>/family</code>, <code>/stats</code>.</li>
+                  <li>Bot tự động nhắn thử thách lúc 08:00 sáng và nhắc giữ Streak lúc 21:00 tối mỗi ngày.</li>
+                </ol>
+              </div>
+              <div class="guide-block">
+                <h3>Cách 2: Deploy Vercel miễn phí + Discord Webhook</h3>
+                <ol>
+                  <li>Đưa thư mục <code>vocab-daily</code> lên GitHub rồi import vào Vercel (hoặc chạy <code>npx vercel</code>).</li>
+                  <li>Thêm biến môi trường <code>GEMINI_API_KEY</code> (và <code>DISCORD_WEBHOOK_URL</code> nếu muốn) trong cài đặt Vercel Project.</li>
+                  <li>Mở link Vercel trên điện thoại, thêm ra màn hình chính để luyện tập mọi lúc và bấm nút gửi thử thách sang kênh Discord cá nhân.</li>
+                </ol>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </main>
+  </div>
+
+  <script src="/app.js"></script>
+</body>
+</html>
