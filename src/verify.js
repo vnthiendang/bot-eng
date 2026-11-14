@@ -27,6 +27,11 @@ const {
   buildStatsEmbed,
 } = require('./discordBot');
 
+const {
+  DEFAULT_GEMINI_MODELS,
+  extractSuggestedModels,
+} = require('./geminiService');
+
 const { createApp } = require('./server');
 
 async function runTests() {
@@ -180,6 +185,15 @@ async function runTests() {
       }
     });
   });
+
+  console.log('--- 5. Kiểm thử Gemini Model Config & Fallback Parser ---');
+  assert.strictEqual(DEFAULT_GEMINI_MODELS[0], 'gemini-3.8-flash');
+  const suggested = extractSuggestedModels(
+    'This model models/gemini-2.0-flash is no longer available. Please update your code to use models/gemini-3.8-flash for the latest features.',
+    'gemini-2.0-flash'
+  );
+  assert.deepStrictEqual(suggested, ['gemini-3.8-flash']);
+  console.log('OK: Cấu hình model mặc định và trích xuất model thay thế hoạt động chính xác.');
 
   console.log('\nTẤT CẢ KIỂM THỬ ĐỀU ĐẠT!');
 }

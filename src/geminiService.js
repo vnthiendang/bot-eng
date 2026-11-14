@@ -1,4 +1,4 @@
-const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash'];
+const DEFAULT_GEMINI_MODELS = ['gemini-3.8-flash', 'gemini-2.5-flash'];
 
 function extractJsonText(rawText) {
   if (!rawText) throw new Error('Gemini returned empty response');
@@ -9,42 +9,119 @@ function extractJsonText(rawText) {
   return JSON.parse(cleaned);
 }
 
+/**
+ * Extract replacement model names hinted in a Google API deprecation/error message.
+ */
+function extractSuggestedModels(message, excludeModel = '') {
+  if (!message) return [];
+  const matches = [...String(message).matchAll(/models\/([a-zA-Z0-9._-]+)/g)].map((m) => m[1]);
+  const excluded = String(excludeModel || '').toLowerCase();
+  return [...new Set(matches)].filter((name) => name.toLowerCase() !== excluded);
+}
+
+/**
+ * Query Google AI /v1beta/models as a dynamic fallback when hardcoded model IDs become deprecated.
+ */
+async function discoverAvailableModels(key) {
+  try {
+    const res = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${encodeURIComponent(key)}`);
+    if (!res.ok) return [];
+    const data = await res.json().catch(() => ({}));
+    const list = Array.isArray(data.models) ? data.models : [];
+
+    const candidates = list
+      .filter((m) => Array.isArray(m.supportedGenerationMethods) && m.supportedGenerationMethods.includes('generateContent'))
+      .map((m) => String(m.name || '').replace(/^models\//, ''))
+      .filter((name) => /^gemini-/i.test(name) && !/(embedding|imagen|veo|tts|audio|robotics|computer-use)/i.test(name));
+
+    return candidates.sort((a, b) => {
+      const aFlash = /flash/i.test(a) && !/lite/i.test(a) ? 0 : /flash/i.test(a) ? 1 : 2;
+      const bFlash = /flash/i.test(b) && !/lite/i.test(b) ? 0 : /flash/i.test(b) ? 1 : 2;
+      if (aFlash !== bFlash) return aFlash - bFlash;
+      return b.localeCompare(a, undefined, { numeric: true });
+    });
+  } catch {
+    return [];
+  }
+}
+
+async function requestModelJSON(model, prompt, key, temperature) {
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature,
+        responseMimeType: 'application/json',
+      },
+    }),
+  });
+
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const message = payload?.error?.message || `HTTP ${response.status}`;
+    const err = new Error(`[${model}] ${message}`);
+    err.status = response.status;
+    err.rawMessage = message;
+    throw err;
+  }
+
+  const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
+  return extractJsonText(text);
+}
+
 async function callGeminiJSON(prompt, apiKey, temperature = 0.4) {
   const key = (apiKey || process.env.GEMINI_API_KEY || '').trim();
   if (!key) {
     throw new Error('Thiếu GEMINI_API_KEY. Vui lòng nhập API key trong phần Cài đặt hoặc file .env.');
   }
 
+  const envModel = (process.env.GEMINI_MODEL || '').trim();
+  const queue = [...new Set([envModel, ...DEFAULT_GEMINI_MODELS].filter(Boolean))];
+  const attempted = new Set();
+  let discoveredTried = false;
   let lastError = null;
-  for (const model of GEMINI_MODELS) {
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${encodeURIComponent(key)}`;
+
+  while (queue.length > 0) {
+    const model = queue.shift();
+    if (!model || attempted.has(model)) continue;
+    attempted.add(model);
+
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: {
-            temperature,
-            responseMimeType: 'application/json',
-          },
-        }),
-      });
-
-      const payload = await response.json().catch(() => ({}));
-      if (!response.ok) {
-        const message = payload?.error?.message || `HTTP ${response.status}`;
-        lastError = new Error(`[${model}] ${message}`);
-        if (response.status === 404 || response.status === 400 || response.status === 429 || response.status >= 500) {
-          continue;
-        }
-        throw lastError;
-      }
-
-      const text = payload?.candidates?.[0]?.content?.parts?.[0]?.text;
-      return extractJsonText(text);
+      return await requestModelJSON(model, prompt, key, temperature);
     } catch (err) {
       lastError = err;
+      const msg = err.rawMessage || err.message || '';
+
+      // Invalid API key / permission errors should surface immediately
+      if (err.status === 401 || err.status === 403 || /api key not valid|api_key_invalid/i.test(msg)) {
+        throw err;
+      }
+
+      // Queue any model explicitly recommended in Google's deprecation/error message
+      for (const suggested of extractSuggestedModels(msg, model)) {
+        if (!attempted.has(suggested) && !queue.includes(suggested)) {
+          queue.unshift(suggested);
+        }
+      }
+
+      // If default models fail due to deprecation/not-found and we haven't checked /v1beta/models yet, discover live models
+      const shouldDiscover = !discoveredTried && (err.status === 404 || err.status === 400 || /no longer available|not found|deprecated/i.test(msg));
+      if (shouldDiscover && queue.length === 0) {
+        discoveredTried = true;
+        const discovered = await discoverAvailableModels(key);
+        for (const candidate of discovered.slice(0, 4)) {
+          if (!attempted.has(candidate)) {
+            queue.push(candidate);
+          }
+        }
+      }
+
+      if (err.status && err.status !== 404 && err.status !== 400 && err.status !== 429 && err.status < 500) {
+        throw err;
+      }
     }
   }
 
@@ -203,6 +280,9 @@ Quy tắc bắt buộc:
 }
 
 module.exports = {
+  DEFAULT_GEMINI_MODELS,
+  extractSuggestedModels,
+  discoverAvailableModels,
   callGeminiJSON,
   analyzeWord,
   evaluateSentence,
