@@ -22,6 +22,9 @@ const {
 } = require('./storageService');
 
 const {
+  DEFAULT_DISCORD_GUILD_ID,
+  DEFAULT_DISCORD_CHANNEL_ID,
+  isAllowedMessageChannel,
   buildWordEmbed,
   buildEvaluationEmbed,
   buildStatsEmbed,
@@ -144,7 +147,12 @@ async function runTests() {
   assert.ok(eEmbed.data.title.includes('82/100'));
   const sEmbed = buildStatsEmbed({ words: [entry], stats });
   assert.ok(sEmbed.data.title.includes('Thống kê'));
-  console.log('OK: Discord.js v14 và Embed Builders tương thích với Node v24.');
+  assert.strictEqual(DEFAULT_DISCORD_GUILD_ID, '1527710940345274528');
+  assert.strictEqual(DEFAULT_DISCORD_CHANNEL_ID, '1571201031440961728');
+  assert.strictEqual(isAllowedMessageChannel({ guild: { id: '1527710940345274528' }, channelId: '1571201031440961728' }), true);
+  assert.strictEqual(isAllowedMessageChannel({ guild: { id: '1527710940345274528' }, channelId: '9999999999999999999' }), false);
+  assert.strictEqual(isAllowedMessageChannel({ guild: null, channelId: 'dm-1' }), true);
+  console.log('OK: Discord.js v14, Embed Builders và bộ lọc channel hoạt động chính xác.');
 
   console.log('--- 4. Kiểm thử Express Server & Web UI Endpoints ---');
   const app = createApp();

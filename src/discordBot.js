@@ -37,9 +37,32 @@ const {
   DEFAULT_TIMEZONE,
 } = require('./srsService');
 
+const DEFAULT_DISCORD_GUILD_ID = '1527710940345274528';
+const DEFAULT_DISCORD_CHANNEL_ID = '1571201031440961728';
+
 // In-memory interaction sessions
 const quizSessions = new Map();
 const pendingWritingTargets = new Map(); // userId -> { word, expiresAt }
+
+function resolveDiscordTargets() {
+  const guildId = (process.env.DISCORD_GUILD_ID || DEFAULT_DISCORD_GUILD_ID).trim();
+  const channelId = (process.env.DISCORD_CHANNEL_ID || DEFAULT_DISCORD_CHANNEL_ID).trim();
+  return { guildId, channelId };
+}
+
+/**
+ * Restrict automatic message parsing (+ word, direct English sentences, !commands)
+ * to the configured learning channel (plus its threads) or Direct Messages.
+ */
+function isAllowedMessageChannel(message, targetChannelId = resolveDiscordTargets().channelId) {
+  if (!message) return false;
+  if (!message.guild) return true; // Direct Messages always allowed
+  if (!targetChannelId || targetChannelId.toLowerCase() === 'all') return true;
+  return (
+    message.channelId === targetChannelId ||
+    message.channel?.parentId === targetChannelId
+  );
+}
 
 function truncate(str, max = 1000) {
   const s = String(str || '');
@@ -438,11 +461,12 @@ async function startDiscordBot() {
   });
 
   client.once('ready', async () => {
+    const { guildId, channelId } = resolveDiscordTargets();
     console.log(`[Discord Bot] Đã đăng nhập dưới tên ${client.user.tag}`);
-    await registerSlashCommands(token, process.env.DISCORD_CLIENT_ID || client.user.id, process.env.DISCORD_GUILD_ID);
+    console.log(`[Discord Bot] Kênh học tập mặc định: ${channelId} (Server: ${guildId})`);
+    await registerSlashCommands(token, process.env.DISCORD_CLIENT_ID || client.user.id, guildId);
 
-    const channelId = (process.env.DISCORD_CHANNEL_ID || '').trim();
-    if (channelId) {
+    if (channelId && channelId.toLowerCase() !== 'all') {
       const tz = process.env.TIMEZONE || DEFAULT_TIMEZONE;
       const morningCron = process.env.MORNING_CRON || '0 8 * * *';
       const eveningCron = process.env.EVENING_CRON || '0 21 * * *';
@@ -460,6 +484,7 @@ async function startDiscordBot() {
   // Handle text shortcuts: "+ word", "!add", "!write", "!quiz", "!family", "!stats", "!export", or direct English sentences
   client.on('messageCreate', async (message) => {
     if (message.author.bot) return;
+    if (!isAllowedMessageChannel(message)) return;
     const content = message.content.trim();
     if (!content) return;
 
@@ -856,6 +881,10 @@ if (require.main === module) {
 }
 
 module.exports = {
+  DEFAULT_DISCORD_GUILD_ID,
+  DEFAULT_DISCORD_CHANNEL_ID,
+  resolveDiscordTargets,
+  isAllowedMessageChannel,
   startDiscordBot,
   buildWordEmbed,
   buildEvaluationEmbed,

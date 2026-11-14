@@ -315,6 +315,7 @@ textarea:focus {
   font-family: inherit;
   font-size: 0.9rem;
   font-weight: 600;
+  text-decoration: none;
   cursor: pointer;
   display: inline-flex;
   align-items: center;
