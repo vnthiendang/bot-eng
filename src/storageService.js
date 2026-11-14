@@ -1,4 +1,5 @@
 const fs = require('fs');
+const os = require('os');
 const path = require('path');
 const {
   createWordEntry,
@@ -8,8 +9,32 @@ const {
 } = require('./srsService');
 
 const DATA_DIR = path.join(__dirname, '..', 'data');
-const DEFAULT_STORE_PATH = path.join(DATA_DIR, 'vocab.json');
+const LOCAL_STORE_PATH = path.join(DATA_DIR, 'vocab.json');
 const SAMPLE_STORE_PATH = path.join(DATA_DIR, 'vocab.sample.json');
+
+let bundledSample = null;
+try {
+  bundledSample = require('../data/vocab.sample.json');
+} catch {
+  bundledSample = null;
+}
+
+let memoryFallbackStore = null;
+
+function isReadOnlyRuntime() {
+  return Boolean(
+    process.env.VERCEL ||
+    process.env.VERCEL_ENV ||
+    process.env.AWS_LAMBDA_FUNCTION_NAME
+  );
+}
+
+function getDefaultStorePath() {
+  if (isReadOnlyRuntime()) {
+    return path.join(os.tmpdir(), 'vocab-daily-vocab.json');
+  }
+  return LOCAL_STORE_PATH;
+}
 
 function defaultEmptyStore() {
   return {
@@ -25,22 +50,46 @@ function defaultEmptyStore() {
   };
 }
 
-function ensureStoreFile(storePath = DEFAULT_STORE_PATH) {
-  const dir = path.dirname(storePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+function getInitialSeedStore() {
+  if (bundledSample && Array.isArray(bundledSample.words)) {
+    return JSON.parse(JSON.stringify(bundledSample));
   }
-  if (!fs.existsSync(storePath)) {
-    if (fs.existsSync(SAMPLE_STORE_PATH)) {
-      fs.copyFileSync(SAMPLE_STORE_PATH, storePath);
-    } else {
-      fs.writeFileSync(storePath, JSON.stringify(defaultEmptyStore(), null, 2), 'utf8');
+  if (fs.existsSync(SAMPLE_STORE_PATH)) {
+    try {
+      return JSON.parse(fs.readFileSync(SAMPLE_STORE_PATH, 'utf8'));
+    } catch {
+      return defaultEmptyStore();
     }
+  }
+  return defaultEmptyStore();
+}
+
+function ensureStoreFile(storePath = getDefaultStorePath()) {
+  try {
+    const dir = path.dirname(storePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    if (!fs.existsSync(storePath)) {
+      const seed = getInitialSeedStore();
+      fs.writeFileSync(storePath, JSON.stringify(seed, null, 2), 'utf8');
+    }
+    return true;
+  } catch (err) {
+    console.warn('[storageService] Không thể ghi file store, chuyển sang bộ nhớ tạm:', err.message);
+    return false;
   }
 }
 
-function loadStore(storePath = DEFAULT_STORE_PATH) {
-  ensureStoreFile(storePath);
+function loadStore(storePath = getDefaultStorePath()) {
+  const fileReady = ensureStoreFile(storePath);
+  if (!fileReady) {
+    if (!memoryFallbackStore) {
+      memoryFallbackStore = getInitialSeedStore();
+    }
+    return memoryFallbackStore;
+  }
+
   try {
     const raw = fs.readFileSync(storePath, 'utf8');
     const parsed = JSON.parse(raw);
@@ -51,18 +100,23 @@ function loadStore(storePath = DEFAULT_STORE_PATH) {
     };
   } catch (err) {
     console.error('[storageService] Failed to parse store, returning fallback:', err.message);
-    return defaultEmptyStore();
+    return getInitialSeedStore();
   }
 }
 
-function saveStore(store, storePath = DEFAULT_STORE_PATH) {
-  const dir = path.dirname(storePath);
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
+function saveStore(store, storePath = getDefaultStorePath()) {
+  memoryFallbackStore = store;
+  try {
+    const dir = path.dirname(storePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
+    }
+    const tempPath = `${storePath}.tmp`;
+    fs.writeFileSync(tempPath, JSON.stringify(store, null, 2), 'utf8');
+    fs.renameSync(tempPath, storePath);
+  } catch (err) {
+    console.warn('[storageService] Ghi file thất bại, giữ bản lưu trong bộ nhớ:', err.message);
   }
-  const tempPath = `${storePath}.tmp`;
-  fs.writeFileSync(tempPath, JSON.stringify(store, null, 2), 'utf8');
-  fs.renameSync(tempPath, storePath);
   return store;
 }
 
@@ -113,7 +167,7 @@ function detectTargetWordInSentence(words, sentence) {
   return null;
 }
 
-function upsertWord(wordData, storePath = DEFAULT_STORE_PATH) {
+function upsertWord(wordData, storePath = getDefaultStorePath()) {
   const store = loadStore(storePath);
   const entry = createWordEntry(wordData);
   const idx = findWordIndex(store.words, entry.word);
@@ -137,7 +191,7 @@ function upsertWord(wordData, storePath = DEFAULT_STORE_PATH) {
   return { word: entry, isNew: true, store };
 }
 
-function deleteWord(idOrWord, storePath = DEFAULT_STORE_PATH) {
+function deleteWord(idOrWord, storePath = getDefaultStorePath()) {
   const store = loadStore(storePath);
   const idx = findWordIndex(store.words, idOrWord);
   if (idx === -1) return { removed: false, store };
@@ -146,7 +200,7 @@ function deleteWord(idOrWord, storePath = DEFAULT_STORE_PATH) {
   return { removed: true, store };
 }
 
-function recordSentencePractice(idOrWord, evaluation, userSentence, storePath = DEFAULT_STORE_PATH) {
+function recordSentencePractice(idOrWord, evaluation, userSentence, storePath = getDefaultStorePath()) {
   const store = loadStore(storePath);
   const idx = findWordIndex(store.words, idOrWord);
   if (idx === -1) return null;
@@ -170,7 +224,7 @@ function recordSentencePractice(idOrWord, evaluation, userSentence, storePath = 
   return { word: entry, stats: store.stats };
 }
 
-function recordQuizResult(idOrWord, isCorrect, storePath = DEFAULT_STORE_PATH) {
+function recordQuizResult(idOrWord, isCorrect, storePath = getDefaultStorePath()) {
   const store = loadStore(storePath);
   const idx = findWordIndex(store.words, idOrWord);
   if (idx !== -1) {
@@ -181,7 +235,7 @@ function recordQuizResult(idOrWord, isCorrect, storePath = DEFAULT_STORE_PATH) {
   return { word: idx !== -1 ? store.words[idx] : null, stats: store.stats };
 }
 
-function importStore(imported, mode = 'merge', storePath = DEFAULT_STORE_PATH) {
+function importStore(imported, mode = 'merge', storePath = getDefaultStorePath()) {
   const incomingWords = Array.isArray(imported?.words) ? imported.words : [];
   const current = mode === 'replace' ? defaultEmptyStore() : loadStore(storePath);
 
@@ -219,8 +273,10 @@ function importStore(imported, mode = 'merge', storePath = DEFAULT_STORE_PATH) {
 }
 
 module.exports = {
-  DEFAULT_STORE_PATH,
+  DEFAULT_STORE_PATH: LOCAL_STORE_PATH,
   SAMPLE_STORE_PATH,
+  getDefaultStorePath,
+  isReadOnlyRuntime,
   loadStore,
   saveStore,
   findWordIndex,

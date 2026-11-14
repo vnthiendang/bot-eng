@@ -2,7 +2,6 @@
   "name": "vocab-daily",
   "version": "1.0.0",
   "description": "Daily English vocabulary habit builder with sentence writing feedback, word family explorer, multi-mode quizzes, Discord Bot, and Vercel-ready Web UI.",
-  "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "bot": "node src/discordBot.js",

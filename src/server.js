@@ -1,10 +1,12 @@
 require('dotenv').config();
+const fs = require('fs');
 const path = require('path');
 const express = require('express');
 const cors = require('cors');
 
 const geminiHandler = require('../api/gemini');
 const {
+  isReadOnlyRuntime,
   loadStore,
   upsertWord,
   deleteWord,
@@ -13,14 +15,19 @@ const {
   importStore,
 } = require('./storageService');
 const { getDueWords } = require('./srsService');
-const { startDiscordBot } = require('./discordBot');
+
+function resolvePublicDir() {
+  const relativePublic = path.join(__dirname, '..', 'public');
+  if (fs.existsSync(relativePublic)) return relativePublic;
+  return path.join(process.cwd(), 'public');
+}
 
 function createApp() {
   const app = express();
   app.use(cors());
   app.use(express.json({ limit: '2mb' }));
 
-  const publicDir = path.join(__dirname, '..', 'public');
+  const publicDir = resolvePublicDir();
   app.use(express.static(publicDir));
 
   app.get('/api/health', (req, res) => {
@@ -28,7 +35,7 @@ function createApp() {
     const botConfigured = Boolean(token && token !== 'your_discord_bot_token_here');
     res.json({
       ok: true,
-      mode: 'local-express',
+      mode: isReadOnlyRuntime() ? 'vercel-express' : 'local-express',
       hasGeminiEnvKey: Boolean((process.env.GEMINI_API_KEY || '').trim()),
       hasWebhookEnv: Boolean((process.env.DISCORD_WEBHOOK_URL || '').trim()),
       botConfigured,
@@ -88,17 +95,24 @@ function createApp() {
   app.all('/api/gemini', (req, res) => geminiHandler(req, res));
 
   app.get('*', (req, res) => {
-    res.sendFile(path.join(publicDir, 'index.html'));
+    const indexPath = path.join(publicDir, 'index.html');
+    if (fs.existsSync(indexPath)) {
+      return res.sendFile(indexPath);
+    }
+    return res.status(404).send('Not Found');
   });
 
   return app;
 }
 
+const app = createApp();
+app.createApp = createApp;
+
 if (require.main === module) {
   const port = Number(process.env.PORT) || 3000;
-  const app = createApp();
   const server = app.listen(port, () => {
     console.log(`[VocabDaily] Web UI đang chạy tại http://localhost:${port}`);
+    const { startDiscordBot } = require('./discordBot');
     startDiscordBot().catch((err) => {
       console.error('[Discord Bot] Không thể kết nối:', err.message);
     });
@@ -114,4 +128,4 @@ if (require.main === module) {
   });
 }
 
-module.exports = { createApp };
+module.exports = app;

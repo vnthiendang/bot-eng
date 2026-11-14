@@ -12,6 +12,8 @@ const {
 } = require('./srsService');
 
 const {
+  getDefaultStorePath,
+  isReadOnlyRuntime,
   loadStore,
   upsertWord,
   deleteWord,
@@ -35,7 +37,9 @@ const {
   extractSuggestedModels,
 } = require('./geminiService');
 
-const { createApp } = require('./server');
+const serverApp = require('./server');
+const { createApp } = serverApp;
+const geminiApiHandler = require('../api/gemini');
 
 async function runTests() {
   console.log('--- 1. Kiểm thử SRS & Streak Engine ---');
@@ -202,6 +206,26 @@ async function runTests() {
   );
   assert.deepStrictEqual(suggested, ['gemini-3.8-flash']);
   console.log('OK: Cấu hình model mặc định và trích xuất model thay thế hoạt động chính xác.');
+
+  console.log('--- 6. Kiểm thử Vercel Serverless Compatibility ---');
+  assert.strictEqual(typeof serverApp, 'function', 'server.js phải export trực tiếp Express app handler');
+  assert.strictEqual(typeof createApp, 'function');
+  assert.strictEqual(typeof geminiApiHandler, 'function');
+
+  const prevVercel = process.env.VERCEL;
+  process.env.VERCEL = '1';
+  const vercelStorePath = getDefaultStorePath();
+  try {
+    assert.strictEqual(isReadOnlyRuntime(), true);
+    assert.ok(vercelStorePath.startsWith(os.tmpdir()), 'Trên Vercel phải ghi file tạm vào os.tmpdir()');
+    const vercelStore = loadStore(vercelStorePath);
+    assert.ok(Array.isArray(vercelStore.words) && vercelStore.words.length >= 3);
+  } finally {
+    if (prevVercel === undefined) delete process.env.VERCEL;
+    else process.env.VERCEL = prevVercel;
+    if (fs.existsSync(vercelStorePath)) fs.unlinkSync(vercelStorePath);
+  }
+  console.log('OK: Export Express app và Storage Vercel Serverless hoạt động an toàn.');
 
   console.log('\nTẤT CẢ KIỂM THỬ ĐỀU ĐẠT!');
 }
