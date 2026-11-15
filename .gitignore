@@ -1,4 +1,7 @@
 node_modules/
 .env
 data/vocab.json
+data/google-token.json
+config/mcp_config.json
+config/google-oauth-client.json
 *.log

@@ -45,6 +45,18 @@
       </div>
 
       <div class="header-actions">
+        <button id="syncSheetBtn" class="btn btn-success" title="Đồng bộ danh sách từ vựng từ Google Spreadsheet">
+          Đồng bộ Google Sheet
+        </button>
+        <a
+          href="https://docs.google.com/spreadsheets/d/1nurVhcDCa_-xJj7fmVNfAuwJyRHNXZEnhCBcOyIYY5g/edit?usp=sharing"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="btn btn-secondary"
+          title="Mở bảng theo dõi từ vựng trên Google Sheets"
+        >
+          Mở Sheet
+        </a>
         <a
           href="https://discord.com/channels/1527710940345274528/1571201031440961728"
           target="_blank"
@@ -52,7 +64,7 @@
           class="btn btn-secondary"
           title="Mở trực tiếp kênh học từ vựng trên Discord"
         >
-          Mở kênh Discord
+          Mở Discord
         </a>
         <button id="sendDiscordBtn" class="btn btn-discord" title="Gửi thẻ bài tập hôm nay sang Discord qua Webhook">
           Gửi Discord hôm nay
@@ -80,7 +92,7 @@
             <div class="card">
               <div class="card-header">
                 <h2>Thêm từ vựng mới bắt gặp hôm nay</h2>
-                <span class="badge badge-info">Gemini AI</span>
+                <span class="badge badge-info">Fast Dictionary (&lt;200ms)</span>
               </div>
               <form id="addWordForm" class="add-word-form">
                 <div class="input-row">
@@ -89,22 +101,22 @@
                     <input
                       id="newWordInput"
                       type="text"
-                      placeholder="Ví dụ: resilient, mitigate, take into account..."
+                      placeholder="Ví dụ: resilient, mitigate, benchmark..."
                       required
                     />
                   </div>
                   <div class="field-group flex-1">
-                    <label for="newWordContextInput">Câu ngữ cảnh bắt gặp (tùy chọn)</label>
+                    <label for="newWordContextInput">Câu ngữ cảnh hoặc Ghi chú (tùy chọn)</label>
                     <input
                       id="newWordContextInput"
                       type="text"
-                      placeholder="Ví dụ: Teams must remain resilient under pressure."
+                      placeholder="Ví dụ: Teams collaborate closely using digital tools."
                     />
                   </div>
                 </div>
                 <div class="form-actions">
                   <button type="submit" id="analyzeWordBtn" class="btn btn-primary">
-                    Phân tích &amp; Lưu từ
+                    Tra nhanh &amp; Lưu từ
                   </button>
                   <span class="hint-text">Hoặc gõ <code>+ từ_vựng</code> trực tiếp trong Discord Bot</span>
                 </div>
@@ -124,9 +136,12 @@
                       <span id="detailIpa" class="ipa-tag"></span>
                       <span id="detailPos" class="pos-tag"></span>
                       <span id="detailRegister" class="badge"></span>
+                      <span id="detailStatus" class="badge badge-info"></span>
+                      <span id="detailDifficulty" class="badge"></span>
                     </div>
                     <p id="detailMeaningVi" class="meaning-vi"></p>
                     <p id="detailMeaningEn" class="meaning-en"></p>
+                    <p id="detailNote" class="hint-text"></p>
                   </div>
                   <div class="hero-actions">
                     <button id="practiceSelectedWordBtn" class="btn btn-success">Luyện viết câu ngay</button>
@@ -319,18 +334,19 @@
           <div class="quiz-toolbar">
             <div class="mode-buttons" id="quizModeButtons">
               <button class="mode-btn active" data-mode="mixed">Trộn đa dạng</button>
+              <button class="mode-btn" data-mode="reading_cloze">Đọc hiểu (Reading Cloze)</button>
               <button class="mode-btn" data-mode="word_form">Biến đổi Họ từ</button>
               <button class="mode-btn" data-mode="error_spot">Tìm lỗi sai</button>
               <button class="mode-btn" data-mode="multiple_choice">Ngữ cảnh &amp; Collocation</button>
               <button class="mode-btn" data-mode="sentence_transform">Viết lại câu</button>
             </div>
-            <button id="startQuizBtn" class="btn btn-primary">Tạo bộ 5 bài tập mới</button>
+            <button id="startQuizBtn" class="btn btn-primary">Tạo bộ bài tập mới</button>
           </div>
         </div>
 
         <div id="quizArenaCard" class="card quiz-arena-card">
           <div id="quizEmptyState" class="empty-state">
-            Chọn dạng bài tập phía trên rồi bấm <strong>Tạo bộ 5 bài tập mới</strong> để ôn lại các từ đến hạn hôm nay.
+            Chọn dạng bài tập phía trên rồi bấm <strong>Tạo bộ bài tập mới</strong> để luyện Reading, Word Form và viết câu từ Google Sheet.
           </div>
 
           <div id="quizActiveView" class="hidden">
@@ -355,7 +371,7 @@
                 placeholder="Nhập câu tiếng Anh của bạn..."
               ></textarea>
               <div class="form-actions">
-                <button id="quizCheckTransformBtn" class="btn btn-primary">Chấm với Gemini AI</button>
+                <button id="quizCheckTransformBtn" class="btn btn-primary">Chấm lỗi ngay</button>
                 <button id="quizRevealTransformBtn" class="btn btn-ghost">Xem đáp án mẫu</button>
               </div>
             </div>
@@ -379,17 +395,17 @@
       <section id="tab-settings" class="tab-panel">
         <div class="settings-grid">
           <div class="card">
-            <h2>Cấu hình API Key &amp; Discord Webhook</h2>
+            <h2>Cấu hình Google Sheet &amp; Discord Webhook</h2>
             <p class="hint-text">
-              Lưu trực tiếp trên trình duyệt (LocalStorage). Nếu bạn chạy server local kèm file <code>.env</code> hoặc cấu hình Environment Variables trên Vercel, bạn có thể bỏ trống ô API Key.
+              Hệ thống sử dụng <strong>Fast Lexical Engine + LanguageTool</strong> (tốc độ phản hồi dưới 200ms, không cần API key trả phí) và đồng bộ trực tiếp với bảng Google Sheets của bạn.
             </p>
             <form id="settingsForm" class="settings-form">
               <div class="field-group">
-                <label for="geminiKeyInput">Google Gemini API Key</label>
+                <label for="spreadsheetIdInput">Google Spreadsheet ID</label>
                 <input
-                  id="geminiKeyInput"
-                  type="password"
-                  placeholder="AIzaSy... (Lấy miễn phí tại aistudio.google.com)"
+                  id="spreadsheetIdInput"
+                  type="text"
+                  placeholder="1nurVhcDCa_-xJj7fmVNfAuwJyRHNXZEnhCBcOyIYY5g"
                 />
               </div>
               <div class="field-group">
@@ -408,9 +424,9 @@
           </div>
 
           <div class="card">
-            <h2>Sao lưu &amp; Đồng bộ dữ liệu (JSON)</h2>
+            <h2>Sao lưu &amp; Đồng bộ dữ liệu (JSON / Sheet)</h2>
             <p class="hint-text">
-              Toàn bộ từ vựng, họ từ, lịch sử viết câu và tiến độ Spaced Repetition được lưu trên trình duyệt của bạn. Hãy xuất file JSON định kỳ hoặc đồng bộ với Discord Bot local.
+              Dữ liệu học tập được lưu trên trình duyệt và đồng bộ trực tiếp từ Google Sheets. Có thể xuất file JSON dự phòng bất kỳ lúc nào.
             </p>
             <div class="backup-actions">
               <button id="exportJsonBtn" class="btn btn-primary">Xuất file Backup (.json)</button>
@@ -420,30 +436,28 @@
               </label>
               <button id="syncFromServerBtn" class="btn btn-ghost">Lấy dữ liệu từ Discord Bot local</button>
               <button id="pushToServerBtn" class="btn btn-ghost">Đẩy dữ liệu sang Discord Bot local</button>
-              <button id="resetSampleBtn" class="btn btn-danger-outline">Nạp lại 3 từ mẫu</button>
+              <button id="resetSampleBtn" class="btn btn-danger-outline">Nạp lại từ mẫu từ Sheet</button>
             </div>
             <div id="serverStatusBox" class="server-status-box">Đang kiểm tra trạng thái server...</div>
           </div>
 
           <div class="card full-span">
-            <h2>Cách vận hành Discord Bot &amp; Deploy Vercel đơn giản nhất</h2>
+            <h2>Quy trình Đồng bộ Google Sheets &amp; Discord Bot mỗi ngày</h2>
             <div class="guide-grid">
               <div class="guide-block">
-                <h3>Cách 1: Discord Bot thuần túy (Tương tác 100% trong khung chat)</h3>
+                <h3>1. Đồng bộ Google Sheets &amp; Discord Bot</h3>
                 <ol>
-                  <li>Tạo Bot tại <strong>Discord Developer Portal</strong> &rarr; bật <strong>Message Content Intent</strong> trong mục Bot.</li>
-                  <li>Copy file <code>.env.example</code> thành <code>.env</code>, điền <code>GEMINI_API_KEY</code>, <code>DISCORD_BOT_TOKEN</code>, <code>DISCORD_CLIENT_ID</code> và <code>DISCORD_CHANNEL_ID</code>.</li>
-                  <li>Chạy lệnh <code>npm start</code> (chạy cả Web UI + Bot) hoặc <code>npm run bot</code>.</li>
-                  <li>Trong Discord: gõ <code>+ resilient</code> để thêm từ, gõ thẳng câu tiếng Anh để sửa lỗi, hoặc dùng <code>/write</code>, <code>/quiz</code>, <code>/family</code>, <code>/stats</code>.</li>
-                  <li>Bot tự động nhắn thử thách lúc 08:00 sáng và nhắc giữ Streak lúc 21:00 tối mỗi ngày.</li>
+                  <li>Mở Google Sheet theo dõi từ vựng của bạn, thêm hoặc sửa trạng thái (<code>Đã thuộc</code> / <code>Đang học</code> / <code>Cần ôn tập</code>).</li>
+                  <li>Bấm <strong>Đồng bộ Google Sheet</strong> trên Web hoặc gõ <code>!sync</code> / <code>/sync</code> trong kênh Discord <code>1571201031440961728</code>.</li>
+                  <li>Gõ <code>+ từ_vựng</code> để tra IPA, họ từ, collocation tức thì, hoặc gõ trực tiếp câu tiếng Anh để LanguageTool chấm lỗi ngay.</li>
+                  <li>Gõ <code>!reading</code> hoặc <code>/reading</code> để luyện bài đọc hiểu ghép từ theo chủ đề trên Sheet.</li>
                 </ol>
               </div>
               <div class="guide-block">
-                <h3>Cách 2: Deploy Vercel miễn phí + Discord Webhook</h3>
+                <h3>2. Kết nối ghi ngược lên Sheet qua Google OAuth / MCP</h3>
                 <ol>
-                  <li>Đưa thư mục <code>vocab-daily</code> lên GitHub rồi import vào Vercel (hoặc chạy <code>npx vercel</code>).</li>
-                  <li>Thêm biến môi trường <code>GEMINI_API_KEY</code> (và <code>DISCORD_WEBHOOK_URL</code> nếu muốn) trong cài đặt Vercel Project.</li>
-                  <li>Mở link Vercel trên điện thoại, thêm ra màn hình chính để luyện tập mọi lúc và bấm nút gửi thử thách sang kênh Discord cá nhân.</li>
+                  <li>Khi chạy MCP Server (<code>mcp_config.json</code> đã cấu hình OAuth Client) hoặc Discord Bot local, dùng tool <code>google_oauth_url</code> để cấp quyền ghi 2 chiều vào Sheet.</li>
+                  <li>Trên Vercel, bấm <strong>Đồng bộ Google Sheet</strong> để kéo từ mới nhất về trình duyệt và dùng <strong>Gửi Discord hôm nay</strong> để đẩy thử thách sang kênh Discord.</li>
                 </ol>
               </div>
             </div>

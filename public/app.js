@@ -117,9 +117,11 @@ const SAMPLE_SEED = {
   },
 };
 
+const DEFAULT_SPREADSHEET_ID = '1nurVhcDCa_-xJj7fmVNfAuwJyRHNXZEnhCBcOyIYY5g';
+
 const state = {
   store: { words: [], stats: { ...SAMPLE_SEED.stats } },
-  settings: { geminiKey: '', discordWebhook: '', theme: 'dark' },
+  settings: { spreadsheetId: DEFAULT_SPREADSHEET_ID, discordWebhook: '', theme: 'dark' },
   selectedWordId: null,
   serverInfo: null,
   quizMode: 'mixed',
@@ -153,13 +155,23 @@ function showToast(msg, isError = false) {
 function loadSettings() {
   try {
     const saved = JSON.parse(localStorage.getItem(SETTINGS_KEY) || '{}');
-    state.settings = { geminiKey: '', discordWebhook: '', theme: 'dark', ...saved };
+    state.settings = {
+      spreadsheetId: DEFAULT_SPREADSHEET_ID,
+      discordWebhook: '',
+      theme: 'dark',
+      ...saved,
+    };
+    if (!state.settings.spreadsheetId) {
+      state.settings.spreadsheetId = DEFAULT_SPREADSHEET_ID;
+    }
   } catch {
-    state.settings = { geminiKey: '', discordWebhook: '', theme: 'dark' };
+    state.settings = { spreadsheetId: DEFAULT_SPREADSHEET_ID, discordWebhook: '', theme: 'dark' };
   }
   document.body.setAttribute('data-theme', state.settings.theme || 'dark');
-  document.getElementById('geminiKeyInput').value = state.settings.geminiKey || '';
-  document.getElementById('discordWebhookInput').value = state.settings.discordWebhook || '';
+  const sheetInput = document.getElementById('spreadsheetIdInput');
+  if (sheetInput) sheetInput.value = state.settings.spreadsheetId || DEFAULT_SPREADSHEET_ID;
+  const webhookInput = document.getElementById('discordWebhookInput');
+  if (webhookInput) webhookInput.value = state.settings.discordWebhook || '';
 }
 
 function saveSettings() {
@@ -244,7 +256,7 @@ function scoreToQuality(score) {
 async function callApi(action, payload = {}) {
   const body = {
     action,
-    apiKey: state.settings.geminiKey || undefined,
+    spreadsheetId: state.settings.spreadsheetId || DEFAULT_SPREADSHEET_ID,
     webhookUrl: state.settings.discordWebhook || undefined,
     ...payload,
   };
@@ -283,16 +295,90 @@ async function checkServerHealth() {
     state.serverInfo = info;
     box.textContent =
       info.mode === 'local-express'
-        ? `Local Express đang chạy | Gemini Env Key: ${info.hasGeminiEnvKey ? 'Đã có' : 'Chưa có'} | Discord Bot: ${info.botConfigured ? 'Đã cấu hình' : 'Chưa cấu hình'}`
-        : 'Đang chạy ở chế độ Cloud / Static.';
+        ? `Local Express đang chạy | FastEngine + Google Sheet: Sẵn sàng | Discord Bot: ${info.botConfigured ? 'Đã cấu hình' : 'Chưa cấu hình'}`
+        : 'Serverless Cloud đang chạy | FastEngine + Google Sheet Sync: Sẵn sàng.';
   } catch {
     state.serverInfo = { mode: 'serverless' };
-    box.textContent = 'Đang chạy ở chế độ Serverless / Trình duyệt (dữ liệu lưu tại LocalStorage).';
+    box.textContent = 'Chế độ Serverless / Trình duyệt | FastEngine + Google Sheet Sync (lưu tại LocalStorage).';
+  }
+}
+
+async function syncGoogleSheet(silent = false) {
+  const btn = document.getElementById('syncSheetBtn');
+  if (btn && !silent) {
+    btn.disabled = true;
+    btn.textContent = 'Đang đồng bộ...';
+  }
+  try {
+    const spreadsheetId = state.settings.spreadsheetId || DEFAULT_SPREADSHEET_ID;
+    let payload;
+    if (state.serverInfo?.mode === 'local-express') {
+      const res = await fetch('/api/sheets/sync', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ spreadsheetId }),
+      });
+      const json = await res.json().catch(() => ({}));
+      if (!res.ok || !json.ok) throw new Error(json.error || `Lỗi đồng bộ Sheet (${res.status})`);
+      payload = json;
+    } else {
+      payload = await callApi('syncSheet', { spreadsheetId });
+    }
+
+    const incomingWords = Array.isArray(payload?.words) ? payload.words : [];
+    const byWord = new Map(
+      state.store.words.map((w) => [String(w.word || '').trim().toLowerCase(), w])
+    );
+
+    for (const sw of incomingWords) {
+      const key = String(sw.word || '').trim().toLowerCase();
+      if (!key) continue;
+      const existing = byWord.get(key);
+      if (existing) {
+        const mergedSrs = {
+          ...(sw.srs || {}),
+          ...(existing.srs || {}),
+          masteryScore: Math.max(existing.srs?.masteryScore || 0, sw.srs?.masteryScore || 0),
+        };
+        byWord.set(key, {
+          ...existing,
+          ...sw,
+          id: existing.id || sw.id,
+          history: Array.isArray(existing.history) ? existing.history : [],
+          srs: (existing.history?.length || 0) > 0 ? mergedSrs : (sw.srs || existing.srs),
+        });
+      } else {
+        byWord.set(key, sw);
+      }
+    }
+
+    state.store.words = Array.from(byWord.values());
+    if (payload?.stats) {
+      state.store.stats = { ...state.store.stats, ...payload.stats };
+    }
+    if (!state.selectedWordId && state.store.words.length > 0) {
+      state.selectedWordId = state.store.words[0].id;
+    }
+    saveStore();
+    if (!silent) {
+      showToast(`Đã đồng bộ ${incomingWords.length} từ từ Google Sheet!`);
+    }
+    return payload;
+  } catch (err) {
+    if (!silent) showToast(err.message, true);
+    return null;
+  } finally {
+    if (btn && !silent) {
+      btn.disabled = false;
+      btn.textContent = 'Đồng bộ Google Sheet';
+    }
   }
 }
 
 async function initStore() {
   const raw = localStorage.getItem(STORE_KEY);
+  let loadedFromFallback = false;
+
   if (raw) {
     try {
       const parsed = JSON.parse(raw);
@@ -301,9 +387,9 @@ async function initStore() {
       }
     } catch {
       state.store = JSON.parse(JSON.stringify(SAMPLE_SEED));
+      loadedFromFallback = true;
     }
   } else {
-    // Try loading initial seed from local server if running locally
     try {
       const res = await fetch('/api/vocab');
       if (res.ok) {
@@ -312,12 +398,15 @@ async function initStore() {
           state.store = { words: serverStore.words, stats: serverStore.stats || SAMPLE_SEED.stats };
         } else {
           state.store = JSON.parse(JSON.stringify(SAMPLE_SEED));
+          loadedFromFallback = true;
         }
       } else {
         state.store = JSON.parse(JSON.stringify(SAMPLE_SEED));
+        loadedFromFallback = true;
       }
     } catch {
       state.store = JSON.parse(JSON.stringify(SAMPLE_SEED));
+      loadedFromFallback = true;
     }
     localStorage.setItem(STORE_KEY, JSON.stringify(state.store));
   }
@@ -326,6 +415,10 @@ async function initStore() {
     state.selectedWordId = state.store.words[0].id;
   }
   renderAll();
+
+  if (loadedFromFallback || state.store.words.length === 0) {
+    await syncGoogleSheet(true);
+  }
 }
 
 function renderHabitBar() {
@@ -368,6 +461,8 @@ function renderWordBank() {
     const allForms = [
       w.word,
       w.meaningVi,
+      w.topic,
+      w.note,
       ...(wf.nouns || []).map((x) => x.word),
       ...(wf.verbs || []).map((x) => x.word),
       ...(wf.adjectives || []).map((x) => x.word),
@@ -425,14 +520,14 @@ function renderWordBank() {
     meta.className = 'word-item-meta';
 
     const mastery = document.createElement('span');
-    mastery.textContent = `Mastery: ${w.srs?.masteryScore || 0}%`;
+    mastery.textContent = w.topic ? `${w.topic} • ${w.srs?.masteryScore || 0}%` : `Mastery: ${w.srs?.masteryScore || 0}%`;
 
     const dueTag = document.createElement('span');
     if (isWordDue(w)) {
       dueTag.className = 'due-tag';
-      dueTag.textContent = 'Cần ôn hôm nay';
+      dueTag.textContent = w.status || 'Cần ôn hôm nay';
     } else {
-      dueTag.textContent = `Ôn sau ${w.srs?.interval || 1} ngày`;
+      dueTag.textContent = w.status || `Ôn sau ${w.srs?.interval || 1} ngày`;
     }
 
     meta.append(mastery, dueTag);
@@ -522,7 +617,26 @@ function renderWordDetail() {
   document.getElementById('detailWord').textContent = word.word;
   document.getElementById('detailIpa').textContent = word.ipa || '';
   document.getElementById('detailPos').textContent = word.partOfSpeech || '';
-  document.getElementById('detailRegister').textContent = word.register || 'General';
+  document.getElementById('detailRegister').textContent = word.topic || word.register || 'General';
+
+  const statusEl = document.getElementById('detailStatus');
+  if (statusEl) {
+    statusEl.textContent = word.status || '';
+    statusEl.classList.toggle('hidden', !word.status);
+  }
+
+  const diffEl = document.getElementById('detailDifficulty');
+  if (diffEl) {
+    diffEl.textContent = word.difficulty ? `Độ khó: ${word.difficulty}` : '';
+    diffEl.classList.toggle('hidden', !word.difficulty);
+  }
+
+  const noteEl = document.getElementById('detailNote');
+  if (noteEl) {
+    noteEl.textContent = word.note ? `Ghi chú: ${word.note}` : '';
+    noteEl.classList.toggle('hidden', !word.note);
+  }
+
   document.getElementById('detailMeaningVi').textContent = word.meaningVi || '';
   document.getElementById('detailMeaningEn').textContent = word.meaningEn || '';
 
@@ -768,6 +882,7 @@ function renderQuizQuestion() {
     error_spot: 'Tìm lỗi sai Ngữ pháp',
     multiple_choice: 'Ngữ cảnh & Collocation',
     sentence_transform: 'Viết lại câu (Active Recall)',
+    reading_cloze: 'Đọc hiểu & Điền từ theo Chủ đề',
   };
 
   document.getElementById('quizCounter').textContent = `Câu ${s.index + 1} / ${s.questions.length}`;
@@ -927,15 +1042,18 @@ function bindEvents() {
       state.selectedWordId = entry.id;
       saveStore();
       syncLocalServerIfAvailable('/api/vocab/upsert', entry);
+      if (state.serverInfo?.mode !== 'local-express') {
+        callApi('appendSheet', { wordEntry: entry }).catch(() => {});
+      }
 
       document.getElementById('newWordInput').value = '';
       document.getElementById('newWordContextInput').value = '';
-      showToast(`Đã phân tích và lưu "${entry.word}"!`);
+      showToast(`Đã tra nhanh và lưu "${entry.word}"!`);
     } catch (err) {
       showToast(err.message, true);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Phân tích & Lưu từ';
+      btn.textContent = 'Tra nhanh & Lưu từ';
     }
   });
 
@@ -1076,7 +1194,7 @@ function bindEvents() {
       showToast(err.message, true);
     } finally {
       btn.disabled = false;
-      btn.textContent = 'Chấm với Gemini AI';
+      btn.textContent = 'Chấm điểm câu viết';
     }
   });
 
@@ -1104,6 +1222,11 @@ function bindEvents() {
     }
   }
 
+  const syncSheetBtn = document.getElementById('syncSheetBtn');
+  if (syncSheetBtn) {
+    syncSheetBtn.addEventListener('click', () => syncGoogleSheet(false));
+  }
+
   document.getElementById('sendDiscordBtn').addEventListener('click', () => triggerDiscordWebhook());
   document.getElementById('testWebhookBtn').addEventListener('click', () =>
     triggerDiscordWebhook('Kiểm tra kết nối VocabDaily -> Discord thành công! Bắt đầu giữ Streak mỗi ngày nhé.')
@@ -1112,10 +1235,11 @@ function bindEvents() {
   // Settings save
   document.getElementById('settingsForm').addEventListener('submit', (e) => {
     e.preventDefault();
-    state.settings.geminiKey = document.getElementById('geminiKeyInput').value.trim();
+    const sheetInput = document.getElementById('spreadsheetIdInput');
+    state.settings.spreadsheetId = (sheetInput?.value || '').trim() || DEFAULT_SPREADSHEET_ID;
     state.settings.discordWebhook = document.getElementById('discordWebhookInput').value.trim();
     saveSettings();
-    showToast('Đã lưu cấu hình trên trình duyệt!');
+    showToast('Đã lưu cấu hình Google Sheet & Discord!');
   });
 
   // JSON Export & Import

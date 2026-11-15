@@ -1,137 +1,277 @@
 {
   "words": [
     {
-      "id": "sample-resilient",
-      "word": "resilient",
-      "ipa": "/rɪˈzɪl.i.ənt/",
-      "partOfSpeech": "adjective",
-      "register": "Formal / Versatile",
-      "meaningVi": "Kiên cường, có khả năng phục hồi nhanh sau khó khăn hoặc tổn thương",
-      "meaningEn": "Able to withstand or recover quickly from difficult conditions.",
+      "id": "sheet-accomplish",
+      "word": "Accomplish",
+      "ipa": "/əˈkʌm.plɪʃ/",
+      "partOfSpeech": "verb",
+      "register": "Công việc",
+      "topic": "Công việc",
+      "status": "Đã thuộc",
+      "difficulty": "Dễ (A2-B1)",
+      "note": "Đi với goal, task, mission",
+      "source": "google-sheet",
+      "meaningVi": "Hoàn thành, đạt được",
+      "meaningEn": "",
       "wordFamily": {
         "nouns": [
           {
-            "word": "resilience",
-            "meaningVi": "sự kiên cường, khả năng phục hồi",
-            "example": "Team resilience is essential during major product launches."
+            "word": "Accomplishment",
+            "meaningVi": "sự Accomplish",
+            "example": ""
+          }
+        ],
+        "verbs": [
+          {
+            "word": "Accomplish",
+            "meaningVi": "động từ gốc",
+            "example": ""
+          }
+        ],
+        "adjectives": [],
+        "adverbs": [],
+        "synonyms": [],
+        "antonyms": []
+      },
+      "collocations": [
+        {
+          "phrase": "Accomplish goal",
+          "meaningVi": "Cụm kết hợp từ ghi chú trên Sheet",
+          "example": "She accomplished all her goals before the deadline."
+        },
+        {
+          "phrase": "Accomplish task",
+          "meaningVi": "Cụm kết hợp từ ghi chú trên Sheet",
+          "example": "She accomplished all her goals before the deadline."
+        },
+        {
+          "phrase": "Accomplish mission",
+          "meaningVi": "Cụm kết hợp từ ghi chú trên Sheet",
+          "example": "She accomplished all her goals before the deadline."
+        }
+      ],
+      "examples": [
+        "She accomplished all her goals before the deadline."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Công việc\" với \"Accomplish\". Lưu ý: Đi với goal, task, mission.",
+      "srs": {
+        "interval": 14,
+        "repetition": 3,
+        "efactor": 2.6,
+        "nextReviewDate": "2026-11-29T08:22:19.221Z",
+        "masteryScore": 85
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.222Z"
+    },
+    {
+      "id": "sheet-collaborate",
+      "word": "Collaborate",
+      "ipa": "/kəˈlæb.ə.reɪt/",
+      "partOfSpeech": "verb",
+      "register": "Công việc",
+      "topic": "Công việc",
+      "status": "Đang học",
+      "difficulty": "Trung bình (B2)",
+      "note": "Thường đi với with someone / on something",
+      "source": "google-sheet",
+      "meaningVi": "Hợp tác, cộng tác",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "Collaboration",
+            "meaningVi": "sự Collaborate",
+            "example": ""
+          }
+        ],
+        "verbs": [
+          {
+            "word": "Collaborate",
+            "meaningVi": "động từ gốc",
+            "example": ""
+          }
+        ],
+        "adjectives": [
+          {
+            "word": "Collaborative",
+            "meaningVi": "mang tính Collaborate",
+            "example": ""
+          }
+        ],
+        "adverbs": [],
+        "synonyms": [],
+        "antonyms": []
+      },
+      "collocations": [
+        {
+          "phrase": "Collaborate with someone",
+          "meaningVi": "Cụm kết hợp từ ghi chú trên Sheet",
+          "example": "Teams collaborate closely using digital tools."
+        },
+        {
+          "phrase": "Collaborate on something",
+          "meaningVi": "Cụm kết hợp từ ghi chú trên Sheet",
+          "example": "Teams collaborate closely using digital tools."
+        }
+      ],
+      "examples": [
+        "Teams collaborate closely using digital tools."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Công việc\" với \"Collaborate\". Lưu ý: Thường đi với with someone / on something.",
+      "srs": {
+        "interval": 1,
+        "repetition": 1,
+        "efactor": 2.5,
+        "nextReviewDate": "2026-01-01T00:00:00.000Z",
+        "masteryScore": 50
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.223Z"
+    },
+    {
+      "id": "sheet-algorithm",
+      "word": "Algorithm",
+      "ipa": "/ˈæl.ɡə.rɪ.ðəm/",
+      "partOfSpeech": "noun",
+      "register": "Công nghệ",
+      "topic": "Công nghệ",
+      "status": "Đã thuộc",
+      "difficulty": "Trung bình (B2)",
+      "note": "Từ vựng cốt lõi khoa học máy tính",
+      "source": "google-sheet",
+      "meaningVi": "Thuật toán",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "Algorithm",
+            "meaningVi": "danh từ gốc",
+            "example": ""
+          }
+        ],
+        "verbs": [],
+        "adjectives": [],
+        "adverbs": [],
+        "synonyms": [],
+        "antonyms": []
+      },
+      "collocations": [],
+      "examples": [
+        "The search engine uses a complex ranking algorithm."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Công nghệ\" với \"Algorithm\". Lưu ý: Từ vựng cốt lõi khoa học máy tính.",
+      "srs": {
+        "interval": 14,
+        "repetition": 3,
+        "efactor": 2.6,
+        "nextReviewDate": "2026-11-29T08:22:19.223Z",
+        "masteryScore": 85
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.223Z"
+    },
+    {
+      "id": "sheet-resilience",
+      "word": "Resilience",
+      "ipa": "/rɪˈzɪl.jəns/",
+      "partOfSpeech": "noun",
+      "register": "Phát triển bản thân",
+      "topic": "Phát triển bản thân",
+      "status": "Đang học",
+      "difficulty": "Khó (C1)",
+      "note": "Tính từ: resilient",
+      "source": "google-sheet",
+      "meaningVi": "Khả năng phục hồi, kiên cường",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "Resilience",
+            "meaningVi": "danh từ gốc",
+            "example": ""
           }
         ],
         "verbs": [],
         "adjectives": [
           {
             "word": "resilient",
-            "meaningVi": "kiên cường, bền bỉ",
-            "example": "She proved remarkably resilient after losing her job."
+            "meaningVi": "biến thể tính từ (từ ghi chú)",
+            "example": ""
           }
         ],
         "adverbs": [
           {
-            "word": "resiliently",
-            "meaningVi": "một cách kiên cường",
-            "example": "The coastal town rebuilt resiliently after the storm."
+            "word": "Resiliently",
+            "meaningVi": "trạng từ liên quan",
+            "example": ""
           }
         ],
-        "synonyms": ["adaptable", "tough", "buoyant", "hardy"],
-        "antonyms": ["fragile", "vulnerable", "brittle"]
+        "synonyms": [],
+        "antonyms": []
       },
-      "collocations": [
-        {
-          "phrase": "economically resilient",
-          "meaningVi": "vững vàng về mặt kinh tế",
-          "example": "Diversified cities tend to be more economically resilient."
-        },
-        {
-          "phrase": "resilient mindset",
-          "meaningVi": "tư duy kiên cường",
-          "example": "A resilient mindset helps founders navigate setbacks."
-        },
-        {
-          "phrase": "remarkably resilient",
-          "meaningVi": "kiên cường một cách đáng nể",
-          "example": "Local ecosystems are remarkably resilient if protected."
-        },
-        {
-          "phrase": "build resilience",
-          "meaningVi": "xây dựng sức chống chịu",
-          "example": "Daily habits help you build resilience against stress."
-        }
-      ],
+      "collocations": [],
       "examples": [
-        "Children are often more resilient than adults give them credit for.",
-        "We need a resilient infrastructure capable of handling sudden traffic spikes."
+        "Resilience is essential to overcome workplace challenges."
       ],
-      "writingPrompt": "Viết một câu mô tả cách bản thân hoặc một hệ thống bạn biết phục hồi sau một sự cố khó khăn.",
+      "writingPrompt": "Viết 1 câu chủ đề \"Phát triển bản thân\" với \"Resilience\". Lưu ý: Tính từ: resilient.",
       "srs": {
-        "interval": 0,
-        "repetition": 0,
+        "interval": 1,
+        "repetition": 1,
         "efactor": 2.5,
         "nextReviewDate": "2026-01-01T00:00:00.000Z",
-        "masteryScore": 25
+        "masteryScore": 50
       },
       "history": [],
-      "createdAt": "2026-11-14T00:00:00.000Z"
+      "createdAt": "2026-11-15T08:22:19.223Z"
     },
     {
-      "id": "sample-ubiquitous",
-      "word": "ubiquitous",
-      "ipa": "/juːˈbɪk.wɪ.təs/",
+      "id": "sheet-feasible",
+      "word": "Feasible",
+      "ipa": "/ˈfiː.zə.bəl/",
       "partOfSpeech": "adjective",
-      "register": "Academic / Formal",
-      "meaningVi": "Có mặt ở khắp mọi nơi, phổ biến rộng rãi",
-      "meaningEn": "Present, appearing, or found everywhere.",
+      "register": "Kinh doanh",
+      "topic": "Kinh doanh",
+      "status": "Cần ôn tập",
+      "difficulty": "Trung bình (B2)",
+      "note": "Đồng nghĩa: viable, practicable",
+      "source": "google-sheet",
+      "meaningVi": "Khả thi, có thể thực hiện",
+      "meaningEn": "",
       "wordFamily": {
         "nouns": [
           {
-            "word": "ubiquity",
-            "meaningVi": "tính phổ biến khắp nơi",
-            "example": "The ubiquity of smartphones has reshaped daily communication."
+            "word": "Feasibility",
+            "meaningVi": "khả năng...",
+            "example": ""
           }
         ],
         "verbs": [],
         "adjectives": [
           {
-            "word": "ubiquitous",
-            "meaningVi": "xuất hiện khắp nơi",
-            "example": "Coffee shops have become ubiquitous in urban neighborhoods."
+            "word": "Feasible",
+            "meaningVi": "tính từ gốc",
+            "example": ""
           }
         ],
         "adverbs": [
           {
-            "word": "ubiquitously",
-            "meaningVi": "một cách phổ biến khắp nơi",
-            "example": "QR codes are now used ubiquitously for payments."
+            "word": "Feasibly",
+            "meaningVi": "một cách...",
+            "example": ""
           }
         ],
-        "synonyms": ["omnipresent", "pervasive", "universal", "widespread"],
-        "antonyms": ["rare", "scarce", "uncommon"]
+        "synonyms": [
+          "viable",
+          "practicable"
+        ],
+        "antonyms": []
       },
-      "collocations": [
-        {
-          "phrase": "become ubiquitous",
-          "meaningVi": "trở nên phổ biến khắp nơi",
-          "example": "Remote collaboration tools have become ubiquitous."
-        },
-        {
-          "phrase": "ubiquitous presence",
-          "meaningVi": "sự hiện diện khắp nơi",
-          "example": "The brand maintains a ubiquitous presence on social media."
-        },
-        {
-          "phrase": "almost ubiquitous",
-          "meaningVi": "gần như ở đâu cũng có",
-          "example": "High-speed internet is almost ubiquitous in major cities."
-        },
-        {
-          "phrase": "ubiquitous computing",
-          "meaningVi": "điện toán phổ cập mọi nơi",
-          "example": "Wearable devices brought ubiquitous computing into daily life."
-        }
-      ],
+      "collocations": [],
       "examples": [
-        "Plastic packaging has become ubiquitous in modern supermarkets.",
-        "AI assistants are now ubiquitous across developer tools."
+        "It is not financially feasible to expand this quarter."
       ],
-      "writingPrompt": "Viết một câu nói về một công nghệ hoặc thói quen hiện nay đã trở nên có mặt ở khắp mọi nơi.",
+      "writingPrompt": "Viết 1 câu chủ đề \"Kinh doanh\" với \"Feasible\". Lưu ý: Đồng nghĩa: viable, practicable.",
       "srs": {
         "interval": 0,
         "repetition": 0,
@@ -140,83 +280,365 @@
         "masteryScore": 20
       },
       "history": [],
-      "createdAt": "2026-11-14T00:00:00.000Z"
+      "createdAt": "2026-11-15T08:22:19.223Z"
     },
     {
-      "id": "sample-mitigate",
-      "word": "mitigate",
-      "ipa": "/ˈmɪt.ɪ.ɡeɪt/",
-      "partOfSpeech": "verb",
-      "register": "Formal / Business",
-      "meaningVi": "Làm giảm nhẹ, hạn chế mức độ nghiêm trọng (của rủi ro, thiệt hại)",
-      "meaningEn": "To make something less harmful, unpleasant, or bad.",
+      "id": "sheet-comprehensive",
+      "word": "Comprehensive",
+      "ipa": "/ˌkɒm.prɪˈhen.sɪv/",
+      "partOfSpeech": "adjective",
+      "register": "Học thuật",
+      "topic": "Học thuật",
+      "status": "Đã thuộc",
+      "difficulty": "Trung bình (B2)",
+      "note": "Tránh nhầm với comprehensible (dễ hiểu)",
+      "source": "google-sheet",
+      "meaningVi": "Toàn diện, bao quát",
+      "meaningEn": "",
       "wordFamily": {
         "nouns": [
           {
-            "word": "mitigation",
-            "meaningVi": "sự giảm nhẹ, biện pháp giảm thiểu",
-            "example": "Risk mitigation should happen before deployment."
+            "word": "Comprehensiveness",
+            "meaningVi": "tính chất...",
+            "example": ""
+          }
+        ],
+        "verbs": [],
+        "adjectives": [
+          {
+            "word": "Comprehensive",
+            "meaningVi": "tính từ gốc",
+            "example": ""
+          }
+        ],
+        "adverbs": [
+          {
+            "word": "Comprehensively",
+            "meaningVi": "một cách...",
+            "example": ""
+          }
+        ],
+        "synonyms": [],
+        "antonyms": []
+      },
+      "collocations": [],
+      "examples": [
+        "We conducted a comprehensive study on consumer habits."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Học thuật\" với \"Comprehensive\". Lưu ý: Tránh nhầm với comprehensible (dễ hiểu).",
+      "srs": {
+        "interval": 14,
+        "repetition": 3,
+        "efactor": 2.6,
+        "nextReviewDate": "2026-11-29T08:22:19.223Z",
+        "masteryScore": 85
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.223Z"
+    },
+    {
+      "id": "sheet-artificial-intelligence",
+      "word": "Artificial Intelligence",
+      "ipa": "/ˌɑː.tɪˈfɪʃ.əl ɪnˈtel.ɪ.dʒəns/",
+      "partOfSpeech": "noun",
+      "register": "Công nghệ",
+      "topic": "Công nghệ",
+      "status": "Đã thuộc",
+      "difficulty": "Dễ (A2-B1)",
+      "note": "Thường viết tắt là AI",
+      "source": "google-sheet",
+      "meaningVi": "Trí tuệ nhân tạo",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "Artificial Intelligence",
+            "meaningVi": "danh từ gốc",
+            "example": ""
+          }
+        ],
+        "verbs": [],
+        "adjectives": [],
+        "adverbs": [],
+        "synonyms": [],
+        "antonyms": []
+      },
+      "collocations": [],
+      "examples": [
+        "Artificial Intelligence is transforming modern industries."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Công nghệ\" với \"Artificial Intelligence\". Lưu ý: Thường viết tắt là AI.",
+      "srs": {
+        "interval": 14,
+        "repetition": 3,
+        "efactor": 2.6,
+        "nextReviewDate": "2026-11-29T08:22:19.224Z",
+        "masteryScore": 85
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.224Z"
+    },
+    {
+      "id": "sheet-delegate",
+      "word": "Delegate",
+      "ipa": "/ˈdel.ɪ.ɡeɪt/",
+      "partOfSpeech": "verb",
+      "register": "Quản lý",
+      "topic": "Quản lý",
+      "status": "Đang học",
+      "difficulty": "Trung bình (B2)",
+      "note": "Danh từ: delegation",
+      "source": "google-sheet",
+      "meaningVi": "Ủy quyền, giao việc",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "delegation",
+            "meaningVi": "biến thể danh từ (từ ghi chú)",
+            "example": ""
           }
         ],
         "verbs": [
           {
-            "word": "mitigate",
-            "meaningVi": "làm giảm nhẹ, giảm thiểu",
-            "example": "Automated tests help mitigate regression bugs."
+            "word": "Delegate",
+            "meaningVi": "động từ gốc",
+            "example": ""
           }
         ],
         "adjectives": [
           {
-            "word": "mitigating",
-            "meaningVi": "có tính giảm nhẹ (tình tiết, yếu tố)",
-            "example": "The judge considered several mitigating circumstances."
-          },
-          {
-            "word": "mitigated",
-            "meaningVi": "được giảm nhẹ",
-            "example": "With mitigated risk, the team approved the release."
+            "word": "Delegative",
+            "meaningVi": "mang tính Delegate",
+            "example": ""
           }
         ],
         "adverbs": [],
-        "synonyms": ["alleviate", "reduce", "lessen", "curb"],
-        "antonyms": ["aggravate", "exacerbate", "intensify"]
+        "synonyms": [],
+        "antonyms": []
       },
-      "collocations": [
-        {
-          "phrase": "mitigate the risk of",
-          "meaningVi": "giảm thiểu rủi ro của việc gì",
-          "example": "Backups mitigate the risk of permanent data loss."
-        },
-        {
-          "phrase": "mitigate the impact",
-          "meaningVi": "giảm nhẹ tác động",
-          "example": "Emergency funds mitigate the impact of sudden expenses."
-        },
-        {
-          "phrase": "mitigating factor",
-          "meaningVi": "yếu tố giảm nhẹ",
-          "example": "Bad weather was cited as a mitigating factor for the delay."
-        },
-        {
-          "phrase": "risk mitigation strategy",
-          "meaningVi": "chiến lược giảm thiểu rủi ro",
-          "example": "Every project needs a clear risk mitigation strategy."
-        }
-      ],
+      "collocations": [],
       "examples": [
-        "Planting coastal mangroves helps mitigate flood damage.",
-        "Clear documentation can mitigate misunderstandings between teams."
+        "A good manager knows how to delegate tasks effectively."
       ],
-      "writingPrompt": "Viết một câu dùng 'mitigate' hoặc 'mitigation' về cách giảm thiểu rủi ro trong công việc hoặc cuộc sống.",
+      "writingPrompt": "Viết 1 câu chủ đề \"Quản lý\" với \"Delegate\". Lưu ý: Danh từ: delegation.",
+      "srs": {
+        "interval": 1,
+        "repetition": 1,
+        "efactor": 2.5,
+        "nextReviewDate": "2026-01-01T00:00:00.000Z",
+        "masteryScore": 50
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.224Z"
+    },
+    {
+      "id": "sheet-simultaneously",
+      "word": "Simultaneously",
+      "ipa": "/ˌsɪm.əlˈteɪ.ni.əs.li/",
+      "partOfSpeech": "adverb",
+      "register": "Học thuật",
+      "topic": "Học thuật",
+      "status": "Cần ôn tập",
+      "difficulty": "Khó (C1)",
+      "note": "Đồng nghĩa: at the same time",
+      "source": "google-sheet",
+      "meaningVi": "Đồng thời, cùng lúc",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "Simultaneouslyment",
+            "meaningVi": "sự Simultaneously",
+            "example": ""
+          }
+        ],
+        "verbs": [
+          {
+            "word": "Simultaneously",
+            "meaningVi": "động từ gốc",
+            "example": ""
+          }
+        ],
+        "adjectives": [],
+        "adverbs": [],
+        "synonyms": [
+          "at the same time"
+        ],
+        "antonyms": []
+      },
+      "collocations": [],
+      "examples": [
+        "Two background processes are executed simultaneously."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Học thuật\" với \"Simultaneously\". Lưu ý: Đồng nghĩa: at the same time.",
       "srs": {
         "interval": 0,
         "repetition": 0,
         "efactor": 2.5,
         "nextReviewDate": "2026-01-01T00:00:00.000Z",
-        "masteryScore": 30
+        "masteryScore": 20
       },
       "history": [],
-      "createdAt": "2026-11-14T00:00:00.000Z"
+      "createdAt": "2026-11-15T08:22:19.224Z"
+    },
+    {
+      "id": "sheet-benchmark",
+      "word": "Benchmark",
+      "ipa": "/ˈbentʃ.mɑːk/",
+      "partOfSpeech": "noun",
+      "register": "Kinh doanh",
+      "topic": "Kinh doanh",
+      "status": "Đang học",
+      "difficulty": "Trung bình (B2)",
+      "note": "Động từ: benchmark against",
+      "source": "google-sheet",
+      "meaningVi": "Tiêu chuẩn đánh giá",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "Benchmark",
+            "meaningVi": "danh từ gốc",
+            "example": ""
+          }
+        ],
+        "verbs": [
+          {
+            "word": "benchmark",
+            "meaningVi": "biến thể động từ (từ ghi chú)",
+            "example": ""
+          }
+        ],
+        "adjectives": [],
+        "adverbs": [],
+        "synonyms": [],
+        "antonyms": []
+      },
+      "collocations": [
+        {
+          "phrase": "benchmark against",
+          "meaningVi": "Dạng động từ kết hợp trong ghi chú",
+          "example": "This survey provides a useful benchmark for growth."
+        }
+      ],
+      "examples": [
+        "This survey provides a useful benchmark for growth."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Kinh doanh\" với \"Benchmark\". Lưu ý: Động từ: benchmark against.",
+      "srs": {
+        "interval": 1,
+        "repetition": 1,
+        "efactor": 2.5,
+        "nextReviewDate": "2026-01-01T00:00:00.000Z",
+        "masteryScore": 50
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.224Z"
+    },
+    {
+      "id": "sheet-proactive",
+      "word": "Proactive",
+      "ipa": "/prəʊˈæk.tɪv/",
+      "partOfSpeech": "adjective",
+      "register": "Kỹ năng mềm",
+      "topic": "Kỹ năng mềm",
+      "status": "Đã thuộc",
+      "difficulty": "Dễ (A2-B1)",
+      "note": "Trái nghĩa: reactive",
+      "source": "google-sheet",
+      "meaningVi": "Chủ động đón đầu",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "Proactiveness",
+            "meaningVi": "tính chất...",
+            "example": ""
+          }
+        ],
+        "verbs": [],
+        "adjectives": [
+          {
+            "word": "Proactive",
+            "meaningVi": "tính từ gốc",
+            "example": ""
+          }
+        ],
+        "adverbs": [
+          {
+            "word": "Proactively",
+            "meaningVi": "một cách...",
+            "example": ""
+          }
+        ],
+        "synonyms": [],
+        "antonyms": [
+          "reactive"
+        ]
+      },
+      "collocations": [],
+      "examples": [
+        "Companies must take a proactive approach to security."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Kỹ năng mềm\" với \"Proactive\". Lưu ý: Trái nghĩa: reactive.",
+      "srs": {
+        "interval": 14,
+        "repetition": 3,
+        "efactor": 2.6,
+        "nextReviewDate": "2026-11-29T08:22:19.224Z",
+        "masteryScore": 85
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.224Z"
+    },
+    {
+      "id": "sheet-synthesize",
+      "word": "Synthesize",
+      "ipa": "/ˈsɪn.θə.saɪz/",
+      "partOfSpeech": "verb",
+      "register": "Học thuật",
+      "topic": "Học thuật",
+      "status": "Cần ôn tập",
+      "difficulty": "Khó (C1)",
+      "note": "Danh từ: synthesis",
+      "source": "google-sheet",
+      "meaningVi": "Tổng hợp (thông tin, ý tưởng)",
+      "meaningEn": "",
+      "wordFamily": {
+        "nouns": [
+          {
+            "word": "synthesis",
+            "meaningVi": "biến thể danh từ (từ ghi chú)",
+            "example": ""
+          }
+        ],
+        "verbs": [
+          {
+            "word": "Synthesize",
+            "meaningVi": "động từ gốc",
+            "example": ""
+          }
+        ],
+        "adjectives": [],
+        "adverbs": [],
+        "synonyms": [],
+        "antonyms": []
+      },
+      "collocations": [],
+      "examples": [
+        "Students must synthesize information from multiple sources."
+      ],
+      "writingPrompt": "Viết 1 câu chủ đề \"Học thuật\" với \"Synthesize\". Lưu ý: Danh từ: synthesis.",
+      "srs": {
+        "interval": 0,
+        "repetition": 0,
+        "efactor": 2.5,
+        "nextReviewDate": "2026-01-01T00:00:00.000Z",
+        "masteryScore": 20
+      },
+      "history": [],
+      "createdAt": "2026-11-15T08:22:19.224Z"
     }
   ],
   "stats": {

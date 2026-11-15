@@ -22,7 +22,13 @@ const {
   analyzeWord,
   evaluateSentence,
   generateQuizBatch,
+  generateReadingExercise,
 } = require('./geminiService');
+const {
+  syncWithGoogleSheet,
+  appendOrUpdateSheetRow,
+  getSpreadsheetUrl,
+} = require('./sheetsService');
 const {
   loadStore,
   findWordIndex,
@@ -221,6 +227,7 @@ function renderQuizQuestion(sessionId) {
     error_spot: 'Tìm lỗi sai Ngữ pháp / Collocation',
     multiple_choice: 'Trắc nghiệm Ngữ cảnh',
     sentence_transform: 'Viết lại câu (Active Recall)',
+    reading_cloze: 'Đọc hiểu Ngữ cảnh (Reading Cloze)',
   };
 
   const embed = new EmbedBuilder()
@@ -261,14 +268,86 @@ function renderQuizQuestion(sessionId) {
   return { embeds: [embed], components };
 }
 
-async function handleAddWordAction(wordInput, contextSentence = '') {
-  const analyzed = await analyzeWord(wordInput, contextSentence);
-  const { word, isNew } = upsertWord(analyzed);
-  const prefix = isNew ? '✨ Đã thêm từ mới: ' : '🔄 Đã cập nhật từ: ';
+function parseQuickAddInput(rawInput) {
+  const parts = String(rawInput || '').split('|').map((s) => s.trim());
+  const wordPart = parts[0] || '';
+  const second = parts[1] || '';
+  const third = parts[2] || '';
+  const fourth = parts[3] || '';
+
+  const isContextSentence = second.split(/\s+/).length >= 4 && /^[A-Za-z0-9\s.,'"?!:;()-]+$/.test(second);
   return {
-    embeds: [buildWordEmbed(word, prefix)],
+    wordPart,
+    contextSentence: isContextSentence ? second : '',
+    customMeta: {
+      meaningVi: !isContextSentence && second ? second : '',
+      topic: third || '',
+      note: fourth || '',
+    },
+  };
+}
+
+async function handleAddWordAction(rawInput, contextSentence = '') {
+  const parsed = contextSentence
+    ? { wordPart: rawInput, contextSentence, customMeta: {} }
+    : parseQuickAddInput(rawInput);
+
+  const analyzed = await analyzeWord(parsed.wordPart, parsed.contextSentence, null, parsed.customMeta);
+  const { word, isNew } = upsertWord(analyzed);
+  let sheetNotice = '';
+  try {
+    const pushRes = await appendOrUpdateSheetRow(word);
+    if (pushRes.syncedToSheet) {
+      sheetNotice = ' • Đã ghi lên Google Sheet';
+    }
+  } catch (err) {
+    console.warn('[Sheets] Ghi từ mới thất bại:', err.message);
+  }
+
+  const prefix = isNew ? '✨ Đã thêm từ mới: ' : '🔄 Đã cập nhật từ: ';
+  const embed = buildWordEmbed(word, prefix);
+  if (sheetNotice) {
+    embed.setFooter({ text: `${embed.data.footer?.text || ''}${sheetNotice}` });
+  }
+  return {
+    embeds: [embed],
     components: [buildWordActionRow(word)],
   };
+}
+
+async function handleSyncSheetAction() {
+  const result = await syncWithGoogleSheet();
+  const s = result.summary;
+  const embed = new EmbedBuilder()
+    .setColor(0x10b981)
+    .setTitle('📊 Đã đồng bộ Google Sheet thành công')
+    .setDescription(`[Mở Google Spreadsheet](${result.spreadsheetUrl})`)
+    .addFields(
+      { name: '📚 Tổng số từ', value: `**${s.total}**`, inline: true },
+      { name: '✅ Đã thuộc', value: `**${s.mastered}**`, inline: true },
+      { name: '⏳ Đang học', value: `**${s.learning}**`, inline: true },
+      { name: '🔄 Cần ôn tập', value: `**${s.needReview}**`, inline: true },
+      { name: '🎯 Tỷ lệ hoàn thành', value: `**${s.completionRate}**`, inline: true }
+    )
+    .setFooter({ text: 'Gõ !reading hoặc /reading để luyện đọc hiểu theo các từ vừa đồng bộ.' });
+  return { embeds: [embed] };
+}
+
+async function handleReadingAction(userId, topic = '') {
+  const store = loadStore();
+  if (!store.words.length) {
+    throw new Error('Kho từ vựng đang trống. Hãy gõ `!sync` để kéo từ từ Google Sheet.');
+  }
+  let pool = store.words;
+  if (topic) {
+    const filtered = store.words.filter((w) =>
+      String(w.topic || w.register || '').toLowerCase().includes(topic.toLowerCase())
+    );
+    if (filtered.length >= 2) pool = filtered;
+  }
+  const readingPack = generateReadingExercise(pool, topic);
+  const quizData = await generateQuizBatch(pool, 'reading_cloze', null, readingPack.blanks.length);
+  return createQuizSessionMessage(quizData.questions, userId);
 }
 
 async function handleEvaluateSentenceAction(targetWord, userSentence) {
@@ -314,6 +393,7 @@ async function handleStartQuizAction(userId, mode = 'mixed', specificWord = null
 }
 
 async function sendMorningHabitCard(client, channelId) {
+  await syncWithGoogleSheet().catch((err) => console.warn('[Sheets] Morning sync skipped:', err.message));
   const channel = await client.channels.fetch(channelId).catch(() => null);
   if (!channel || !channel.isTextBased()) return;
 
@@ -418,9 +498,17 @@ async function registerSlashCommands(token, clientId, guildId) {
             { name: 'Biến đổi họ từ (Word Form)', value: 'word_form' },
             { name: 'Tìm lỗi sai (Error Spot)', value: 'error_spot' },
             { name: 'Trắc nghiệm ngữ cảnh', value: 'multiple_choice' },
-            { name: 'Viết lại câu', value: 'sentence_transform' }
+            { name: 'Viết lại câu', value: 'sentence_transform' },
+            { name: 'Đọc hiểu ngữ cảnh (Reading)', value: 'reading_cloze' }
           )
       ),
+    new SlashCommandBuilder()
+      .setName('reading')
+      .setDescription('Luyện đọc hiểu Reading Cloze ghép từ theo chủ đề Google Sheet')
+      .addStringOption((opt) => opt.setName('topic').setDescription('Chủ đề (ví dụ: Công việc, Học thuật, Kinh doanh)').setRequired(false)),
+    new SlashCommandBuilder()
+      .setName('sync')
+      .setDescription('Đồng bộ dữ liệu từ Google Spreadsheet vào Bot'),
     new SlashCommandBuilder()
       .setName('family')
       .setDescription('Xem sơ đồ họ từ (Noun/Verb/Adj/Adv) của một từ')
@@ -464,6 +552,9 @@ async function startDiscordBot() {
     const { guildId, channelId } = resolveDiscordTargets();
     console.log(`[Discord Bot] Đã đăng nhập dưới tên ${client.user.tag}`);
     console.log(`[Discord Bot] Kênh học tập mặc định: ${channelId} (Server: ${guildId})`);
+    syncWithGoogleSheet()
+      .then((res) => console.log(`[Sheets] Đã đồng bộ ${res.summary.total} từ từ Google Sheet.`))
+      .catch((err) => console.warn('[Sheets] Đồng bộ khi khởi động thất bại:', err.message));
     await registerSlashCommands(token, process.env.DISCORD_CLIENT_ID || client.user.id, guildId);
 
     if (channelId && channelId.toLowerCase() !== 'all') {
@@ -489,12 +580,11 @@ async function startDiscordBot() {
     if (!content) return;
 
     try {
-      // Quick add: "+ resilient" or "+ resilient | The team stayed resilient."
+      // Quick add: "+ resilient" or "+ resilient | kiên cường | Công việc | Tính từ: resilience"
       if (content.startsWith('+') && content.length > 2) {
         const raw = content.slice(1).trim();
-        const [wordPart, contextPart] = raw.split('|').map((s) => s.trim());
         await message.channel.sendTyping();
-        const replyPayload = await handleAddWordAction(wordPart, contextPart || '');
+        const replyPayload = await handleAddWordAction(raw);
         await message.reply(replyPayload);
         return;
       }
@@ -502,11 +592,13 @@ async function startDiscordBot() {
       if (content === '!help') {
         await message.reply(
           [
-            '**Hướng dẫn nhanh VocabDaily Bot:**',
-            '• `+ <từ vựng>` — Thêm từ mới, phân tích IPA, nghĩa, Collocations và Họ từ',
-            '• Gõ trực tiếp 1 câu tiếng Anh có chứa từ trong kho — Bot tự chấm lỗi ngữ pháp & gợi ý 3 câu nâng cấp',
+            '**Hướng dẫn nhanh VocabDaily Bot (Tốc độ cao + Google Sheets):**',
+            '• `+ <từ vựng>` hoặc `+ <từ> | <nghĩa> | <chủ đề> | <ghi chú>` — Phân tích & lưu tức thì',
+            '• Gõ trực tiếp 1 câu tiếng Anh có chứa từ trong kho — Tự chấm lỗi ngữ pháp & gợi ý 3 câu nâng cấp',
+            '• `!sync` — Đồng bộ từ vựng từ Google Spreadsheet vào Bot',
+            '• `!reading [chủ đề]` — Luyện đọc hiểu (Reading Cloze) theo chủ đề',
             '• `!write [từ]` — Nhận thử thách viết câu từ danh sách cần ôn',
-            '• `!quiz [mixed|word_form|error_spot|multiple_choice]` — Làm bộ 5 câu ôn tập tương tác',
+            '• `!quiz [mixed|word_form|error_spot|multiple_choice|reading_cloze]` — Làm bộ 5 câu ôn tập tương tác',
             '• `!family <từ>` — Tra nhanh sơ đồ Noun / Verb / Adj / Adv',
             '• `!stats` — Xem Streak và tiến độ hôm nay',
             '• `!export` — Tải file sao lưu `vocab-backup.json`',
@@ -515,11 +607,25 @@ async function startDiscordBot() {
         return;
       }
 
+      if (content === '!sync') {
+        await message.channel.sendTyping();
+        const syncPayload = await handleSyncSheetAction();
+        await message.reply(syncPayload);
+        return;
+      }
+
+      if (content === '!reading' || content.startsWith('!reading ')) {
+        const topic = content.slice(8).trim();
+        await message.channel.sendTyping();
+        const readingPayload = await handleReadingAction(message.author.id, topic);
+        await message.reply(readingPayload);
+        return;
+      }
+
       if (content.startsWith('!add ')) {
         const raw = content.slice(5).trim();
-        const [wordPart, contextPart] = raw.split('|').map((s) => s.trim());
         await message.channel.sendTyping();
-        const replyPayload = await handleAddWordAction(wordPart, contextPart || '');
+        const replyPayload = await handleAddWordAction(raw);
         await message.reply(replyPayload);
         return;
       }
@@ -620,9 +726,22 @@ async function startDiscordBot() {
         if (commandName === 'help') {
           await interaction.reply({
             content:
-              '**VocabDaily Bot:**\n• `/add <word>` hoặc `+ <word>` — Phân tích & lưu từ mới + họ từ\n• `/write [word]` — Viết câu & chấm lỗi ngữ pháp\n• `/quiz [mode]` — Làm bài tập đa dạng\n• `/family <word>` — Xem họ từ\n• `/stats` — Xem Streak\n• `/export` — Tải file JSON sao lưu',
+              '**VocabDaily Bot:**\n• `/add <word>` hoặc `+ <word>` — Phân tích & lưu tức thì + họ từ\n• `/sync` — Đồng bộ Google Sheet\n• `/reading [topic]` — Luyện đọc hiểu Reading Cloze\n• `/write [word]` — Viết câu & chấm lỗi ngữ pháp\n• `/quiz [mode]` — Làm bài tập đa dạng\n• `/family <word>` — Xem họ từ\n• `/stats` — Xem Streak\n• `/export` — Tải file JSON sao lưu',
             ephemeral: true,
           });
+          return;
+        }
+        if (commandName === 'sync') {
+          await interaction.deferReply();
+          const syncPayload = await handleSyncSheetAction();
+          await interaction.editReply(syncPayload);
+          return;
+        }
+        if (commandName === 'reading') {
+          const topic = interaction.options.getString('topic') || '';
+          await interaction.deferReply();
+          const readingPayload = await handleReadingAction(interaction.user.id, topic);
+          await interaction.editReply(readingPayload);
           return;
         }
         if (commandName === 'stats') {

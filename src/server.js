@@ -15,6 +15,12 @@ const {
   importStore,
 } = require('./storageService');
 const { getDueWords } = require('./srsService');
+const {
+  DEFAULT_SPREADSHEET_ID,
+  syncWithGoogleSheet,
+  getGoogleAuthUrl,
+  exchangeCodeForTokens,
+} = require('./sheetsService');
 
 function resolvePublicDir() {
   const relativePublic = path.join(__dirname, '..', 'public');
@@ -89,6 +95,34 @@ function createApp() {
   app.delete('/api/vocab/:idOrWord', (req, res) => {
     const result = deleteWord(decodeURIComponent(req.params.idOrWord));
     res.json({ ok: true, ...result });
+  });
+
+  app.post('/api/sheets/sync', async (req, res) => {
+    try {
+      const sheetId = (req.body?.spreadsheetId || DEFAULT_SPREADSHEET_ID).trim();
+      const result = await syncWithGoogleSheet(undefined, sheetId);
+      res.json({ ok: true, ...result });
+    } catch (err) {
+      res.status(400).json({ ok: false, error: err.message });
+    }
+  });
+
+  app.get('/api/google/auth-url', (req, res) => {
+    try {
+      res.json({ ok: true, url: getGoogleAuthUrl() });
+    } catch (err) {
+      res.status(400).json({ ok: false, error: err.message });
+    }
+  });
+
+  app.post('/api/google/exchange', async (req, res) => {
+    try {
+      const code = req.body?.code || '';
+      await exchangeCodeForTokens(code);
+      res.json({ ok: true });
+    } catch (err) {
+      res.status(400).json({ ok: false, error: err.message });
+    }
   });
 
   // Reuse Vercel serverless handler for /api/gemini

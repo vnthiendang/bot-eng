@@ -1,0 +1,17 @@
+{
+  "mcpServers": {
+    "vocab-daily-sheets": {
+      "command": "node",
+      "args": [
+        "./src/mcpServer.js"
+      ],
+      "env": {
+        "SPREADSHEET_ID": "1nurVhcDCa_-xJj7fmVNfAuwJyRHNXZEnhCBcOyIYY5g",
+        "GOOGLE_CLIENT_ID": "your-client-id.apps.googleusercontent.com",
+        "GOOGLE_CLIENT_SECRET": "your-google-client-secret",
+        "GOOGLE_PROJECT_ID": "your-gcp-project-id",
+        "GOOGLE_REDIRECT_URI": "https://antigravity.google/oauth-callback"
+      }
+    }
+  }
+}

@@ -1,4 +1,5 @@
 const assert = require('assert');
+const { spawn } = require('child_process');
 const fs = require('fs');
 const os = require('os');
 const path = require('path');
@@ -36,6 +37,20 @@ const {
   DEFAULT_GEMINI_MODELS,
   extractSuggestedModels,
 } = require('./geminiService');
+
+const {
+  deriveWordFamily,
+  evaluateSentenceFast,
+  generateReadingExercise,
+  generateQuizBatchFast,
+} = require('./fastEngine');
+
+const {
+  DEFAULT_SPREADSHEET_ID,
+  parseCsv,
+  parseSheetRows,
+  getGoogleAuthUrl,
+} = require('./sheetsService');
 
 const serverApp = require('./server');
 const { createApp } = serverApp;
@@ -226,6 +241,172 @@ async function runTests() {
     if (fs.existsSync(vercelStorePath)) fs.unlinkSync(vercelStorePath);
   }
   console.log('OK: Export Express app và Storage Vercel Serverless hoạt động an toàn.');
+
+  console.log('--- 7. Kiểm thử FastEngine, Reading Cloze & Đa dạng bài tập ---');
+  const familyCheck = deriveWordFamily('resilience', 'Noun', 'Tính từ: resilient; Đồng nghĩa: grit, adaptability');
+  assert.ok(familyCheck.nouns.some((x) => x.word.toLowerCase() === 'resilience'));
+  assert.ok(familyCheck.adjectives.some((x) => x.word.toLowerCase() === 'resilient'));
+  assert.ok(familyCheck.synonyms.includes('grit'));
+
+  const fastEval = await evaluateSentenceFast(
+    'resilient',
+    'she are resilient during hard time',
+    createWordEntry({ word: 'resilient', partOfSpeech: 'adjective', note: 'Tính từ' })
+  );
+  assert.strictEqual(fastEval.isCorrectUsage, true);
+  assert.ok(fastEval.score >= 40 && fastEval.score <= 100);
+  assert.ok(typeof fastEval.correctedSentence === 'string' && fastEval.correctedSentence.endsWith('.'));
+  assert.ok(fastEval.upgradedVersions && fastEval.upgradedVersions.natural);
+
+  const quizSeed = [
+    createWordEntry({
+      word: 'Accomplish',
+      partOfSpeech: 'Verb',
+      meaningVi: 'Hoàn thành, đạt được',
+      topic: 'Công việc',
+      examples: ['We worked hard to accomplish our yearly goals ahead of schedule.'],
+    }),
+    createWordEntry({
+      word: 'Collaborate',
+      partOfSpeech: 'Verb',
+      meaningVi: 'Hợp tác, cộng tác',
+      topic: 'Công việc',
+      examples: ['Different departments need to collaborate closely to finish this project.'],
+    }),
+    createWordEntry({
+      word: 'Resilience',
+      partOfSpeech: 'Noun',
+      meaningVi: 'Sự kiên cường',
+      topic: 'Phát triển bản thân',
+      examples: ['Showing resilience in difficult times is a key trait of a good leader.'],
+      note: 'Tính từ: resilient',
+    }),
+  ];
+
+  const readingPack = generateReadingExercise(quizSeed, 'Công việc');
+  assert.ok(readingPack.blanks.length >= 2);
+  assert.ok(readingPack.passageWithBlanks.includes('__(1)__') || readingPack.passageWithBlanks.includes('(1) _____'));
+
+  const readingQuiz = generateQuizBatchFast(quizSeed, 'reading_cloze', 3);
+  assert.ok(readingQuiz.questions.length >= 2);
+  for (const q of readingQuiz.questions) {
+    assert.strictEqual(q.type, 'reading_cloze');
+    assert.strictEqual(q.options.length, 4);
+    assert.ok(q.options.includes(q.correctAnswer));
+  }
+
+  const mixedQuiz = generateQuizBatchFast(quizSeed, 'mixed', 5);
+  assert.strictEqual(mixedQuiz.questions.length, 5);
+  assert.ok(mixedQuiz.questions.some((q) => q.type === 'reading_cloze'));
+  console.log('OK: FastEngine, Reading Cloze và Quiz 5 chế độ hoạt động ổn định.');
+
+  console.log('--- 8. Kiểm thử Google Sheet CSV Parser & OAuth URL ---');
+  const csvRows = parseCsv('col1,"quoted, cell","say ""hi"""\na,b,c');
+  assert.strictEqual(csvRows.length, 2);
+  assert.strictEqual(csvRows[0][1], 'quoted, cell');
+  assert.strictEqual(csvRows[0][2], 'say "hi"');
+
+  const sampleSheetCsv = [
+    ',,,,,,,,,',
+    ',Tổng kết,12,Đã thuộc,5,,,,,',
+    ',Từ vựng,Phiên âm (IPA),Từ loại,Nghĩa tiếng Việt,Chủ đề,Ví dụ câu,Trạng thái,Độ khó,Ghi chú',
+    ',Accomplish,/əˈkʌm.plɪʃ/,Verb,"Hoàn thành, đạt được",Công việc,We need to accomplish our goals.,Đã thuộc,Trung bình (B2),Thường đi với goal / task',
+    ',Benchmark,/ˈbentʃ.mɑːrk/,Noun,Điểm chuẩn,Kinh doanh,This report sets a new benchmark.,Cần ôn tập,Trung bình (B2),',
+  ].join('\n');
+
+  const parsedSheet = parseSheetRows(sampleSheetCsv);
+  assert.strictEqual(parsedSheet.words.length, 2);
+  assert.strictEqual(parsedSheet.words[0].word, 'Accomplish');
+  assert.strictEqual(parsedSheet.words[0].srs.masteryScore, 85);
+  assert.strictEqual(parsedSheet.words[1].srs.masteryScore, 20);
+  assert.strictEqual(parsedSheet.summary.total, 2);
+  assert.strictEqual(parsedSheet.summary.mastered, 1);
+  assert.strictEqual(parsedSheet.summary.needReview, 1);
+
+  const prevClientId = process.env.GOOGLE_CLIENT_ID;
+  const prevClientSecret = process.env.GOOGLE_CLIENT_SECRET;
+  const prevRedirect = process.env.GOOGLE_REDIRECT_URI;
+  process.env.GOOGLE_CLIENT_ID = 'test-client-id.apps.googleusercontent.com';
+  process.env.GOOGLE_CLIENT_SECRET = 'test-secret';
+  process.env.GOOGLE_REDIRECT_URI = 'https://antigravity.google/oauth-callback';
+  try {
+    const authUrl = getGoogleAuthUrl('verify-state');
+    assert.ok(authUrl.startsWith('https://accounts.google.com/o/oauth2/auth?'));
+    assert.ok(authUrl.includes('spreadsheets'));
+    assert.ok(authUrl.includes('verify-state'));
+  } finally {
+    if (prevClientId === undefined) delete process.env.GOOGLE_CLIENT_ID;
+    else process.env.GOOGLE_CLIENT_ID = prevClientId;
+    if (prevClientSecret === undefined) delete process.env.GOOGLE_CLIENT_SECRET;
+    else process.env.GOOGLE_CLIENT_SECRET = prevClientSecret;
+    if (prevRedirect === undefined) delete process.env.GOOGLE_REDIRECT_URI;
+    else process.env.GOOGLE_REDIRECT_URI = prevRedirect;
+  }
+  console.log('OK: Google Sheet CSV Parser và Google OAuth URL builder hoạt động chính xác.');
+
+  console.log('--- 9. Kiểm thử MCP Server (stdio JSON-RPC 2.0) & mcp_config.json ---');
+  const globalMcpPath = path.join(os.homedir(), '.gemini', 'config', 'mcp_config.json');
+  assert.ok(fs.existsSync(globalMcpPath), `Thiếu file cấu hình MCP toàn cục: ${globalMcpPath}`);
+  const globalMcpCfg = JSON.parse(fs.readFileSync(globalMcpPath, 'utf8'));
+  const mcpEntry = globalMcpCfg?.mcpServers?.['vocab-daily-sheets'];
+  assert.ok(mcpEntry, 'mcp_config.json phải có server vocab-daily-sheets');
+  assert.strictEqual(mcpEntry.command, 'node');
+  assert.ok(Array.isArray(mcpEntry.args) && mcpEntry.args[0].endsWith('mcpServer.js'));
+  assert.strictEqual(mcpEntry.env?.SPREADSHEET_ID, DEFAULT_SPREADSHEET_ID);
+
+  await new Promise((resolve, reject) => {
+    const child = spawn(process.execPath, [path.join(__dirname, 'mcpServer.js')], {
+      stdio: ['pipe', 'pipe', 'pipe'],
+    });
+    let stdoutBuf = '';
+    const responses = new Map();
+    const timer = setTimeout(() => {
+      child.kill();
+      reject(new Error(`MCP server timeout. Output so far: ${stdoutBuf}`));
+    }, 5000);
+
+    child.stdout.on('data', (chunk) => {
+      stdoutBuf += chunk.toString('utf8');
+      const lines = stdoutBuf.split(/\r?\n/);
+      stdoutBuf = lines.pop() || '';
+      for (const line of lines) {
+        if (!line.trim()) continue;
+        const msg = JSON.parse(line);
+        if (msg.id !== undefined) responses.set(msg.id, msg);
+        if (responses.has(1) && responses.has(2)) {
+          clearTimeout(timer);
+          try {
+            const initRes = responses.get(1);
+            assert.strictEqual(initRes.result?.serverInfo?.name, 'vocab-daily-sheets-mcp');
+            const toolsRes = responses.get(2);
+            const toolNames = (toolsRes.result?.tools || []).map((t) => t.name);
+            assert.deepStrictEqual(toolNames, [
+              'sheets_sync_vocab',
+              'vocab_lookup_fast',
+              'writing_evaluate_fast',
+              'reading_generate_passage',
+              'google_oauth_url',
+            ]);
+            child.kill();
+            resolve();
+          } catch (err) {
+            child.kill();
+            reject(err);
+          }
+        }
+      }
+    });
+
+    child.on('error', (err) => {
+      clearTimeout(timer);
+      reject(err);
+    });
+
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 1, method: 'initialize', params: {} })}\n`);
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', method: 'notifications/initialized' })}\n`);
+    child.stdin.write(`${JSON.stringify({ jsonrpc: '2.0', id: 2, method: 'tools/list', params: {} })}\n`);
+  });
+  console.log('OK: Stdio MCP Server và mcp_config.json hoạt động đúng chuẩn (5 tools).');
 
   console.log('\nTẤT CẢ KIỂM THỬ ĐỀU ĐẠT!');
 }

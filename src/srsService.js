@@ -81,7 +81,12 @@ function createWordEntry(wordData) {
     word: baseWord,
     ipa: String(wordData.ipa || '').trim(),
     partOfSpeech: String(wordData.partOfSpeech || '').trim(),
-    register: String(wordData.register || 'General').trim(),
+    register: String(wordData.register || wordData.topic || 'General').trim(),
+    topic: String(wordData.topic || wordData.register || 'Chung').trim(),
+    status: String(wordData.status || 'Đang học').trim(),
+    difficulty: String(wordData.difficulty || 'Trung bình (B2)').trim(),
+    note: String(wordData.note || '').trim(),
+    source: String(wordData.source || 'local').trim(),
     meaningVi: String(wordData.meaningVi || '').trim(),
     meaningEn: String(wordData.meaningEn || '').trim(),
     wordFamily: {
